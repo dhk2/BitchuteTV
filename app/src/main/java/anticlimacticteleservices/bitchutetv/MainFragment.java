@@ -154,10 +154,11 @@ public class MainFragment extends BrowseFragment {
 
         GridItemPresenter mGridPresenter = new GridItemPresenter();
         ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
-        gridRowAdapter.add(getResources().getString(R.string.grid_view));
-        gridRowAdapter.add(getString(R.string.error_fragment));
+       // gridRowAdapter.add(getResources().getString(R.string.grid_view));
+      //  gridRowAdapter.add(getString(R.string.error_fragment));
         gridRowAdapter.add("Refresh");
         gridRowAdapter.add("Authenticate");
+        gridRowAdapter.add(("Import"));
         rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
 
         setAdapter(rowsAdapter);
@@ -235,15 +236,35 @@ public class MainFragment extends BrowseFragment {
             if (item instanceof Video) {
                 Video video = (Video) item;
                 Log.d(TAG, "Item: " + item.toString());
-                Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                intent.putExtra(DetailsActivity.VIDEO, video);
 
-                Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                        getActivity(),
-                        ((ImageCardView) itemViewHolder.view).getMainImageView(),
-                        DetailsActivity.SHARED_ELEMENT_NAME)
-                        .toBundle();
-                getActivity().startActivity(intent, bundle);
+                if (item instanceof Video) {
+                    if (null == video) {
+                        System.out.println("You screwed up bad");
+                    } else {
+                        Video v = MainActivity.data.getVideo(video.getSourceID());
+                        if (null == v) {
+                            System.out.println("you screwed up");
+                        } else {
+                            if (!v.getMp4().isEmpty()) {
+                                video = v;
+                            }
+                        }
+                    }
+                    if (video.getMp4().isEmpty()) {
+                        HomeVideoScrape task = new HomeVideoScrape();
+                        task.execute((Video) item);
+                    }
+                    System.out.println("meaning to launch"+video.toCompactString());
+                    Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                    intent.putExtra(DetailsActivity.VIDEO, video);
+
+                    Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                            getActivity(),
+                            ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                            DetailsActivity.SHARED_ELEMENT_NAME)
+                            .toBundle();
+                    getActivity().startActivity(intent, bundle);
+                }
             } else if (item instanceof String) {
                 if (item.equals("Authenticate")){
                     final Dialog dialog = new Dialog((Context)getActivity());

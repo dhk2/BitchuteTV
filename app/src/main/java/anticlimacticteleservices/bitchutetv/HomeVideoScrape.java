@@ -32,26 +32,33 @@ public class HomeVideoScrape extends AsyncTask<Video,Video,Video> {
         @Override
         protected void onPostExecute(Video video) {
             super.onPostExecute(video);
+            MainActivity.data.addScrapedVideos(video);
             Log.v("Video-Scrape","Post-execute");
             MainActivity.data.setScraping(false);
         }
         @Override
         protected Video doInBackground(Video... videos) {
+
             Video nv = videos[0];
+            System.out.println("attempting to scrape"+nv.toCompactString());
             try {
                 Document doc = Jsoup.connect(nv.getBitchuteUrl()).get();
                 nv.setCategory(doc.getElementsByClass("video-detail-list").first().getElementsByTag("a").first().text());
                 nv.setDescription(doc.getElementsByClass("full hidden").toString());
                 nv.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
                 nv.setMp4(doc.getElementsByTag("source").attr("src"));
-                MainActivity.data.updatePopular(nv);
-                MainActivity.data.setRelated(Bitchute.getVideos(doc));
+                //MainActivity.data.updateAll(nv);
+                ArrayList<Video> relatedcontent=Bitchute.getVideos(doc);
+                for (Video v : relatedcontent) {
+                    MainActivity.data.addAll(v);
+                    nv.addRelatedVideos(v.getSourceID());
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());
             } catch (NullPointerException e){
                 e.printStackTrace();
             }
-        return null;
+        return nv;
         }
     }

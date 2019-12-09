@@ -30,13 +30,14 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
     @Override
     protected void onBindDescription(ViewHolder viewHolder, Object item) {
         Video video = (Video) item;
-        if (video != null) {
-            HomeVideoScrape task = new HomeVideoScrape();
-            MainActivity.data.setScraping(true);
-            task.execute(video);
-            viewHolder.getTitle().setText(video.getTitle());
-            viewHolder.getSubtitle().setText(video.getAuthor());
-            MainActivity.data.setDescription(viewHolder.getBody());
+        Video v = MainActivity.data.getScrapedVideo(video);
+        if (v != null) {
+            System.out.println("already scraped this video "+video.toCompactString());
+            video=v;
+       // System.out.println(video.toCompactString());
+        viewHolder.getTitle().setText(video.getTitle());
+        viewHolder.getSubtitle().setText(video.getAuthor());
+        viewHolder.getBody().setText(video.getDescription());
         }
     }
 }

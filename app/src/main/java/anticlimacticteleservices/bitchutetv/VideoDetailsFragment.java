@@ -49,6 +49,7 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -83,17 +84,25 @@ public class VideoDetailsFragment extends DetailsFragment {
         if (mSelectedMovie != null) {
             mPresenterSelector = new ClassPresenterSelector();
             mAdapter = new ArrayObjectAdapter(mPresenterSelector);
+
+            setOnItemViewClickedListener(new ItemViewClickedListener());
             setupDetailsOverviewRow();
             setupDetailsOverviewRowPresenter();
             setAdapter(mAdapter);
             initializeBackground(mSelectedMovie);
-            setOnItemViewClickedListener(new ItemViewClickedListener());
+            Video updatedVideo=MainActivity.data.getScrapedVideo(mSelectedMovie);
+            if (null == updatedVideo) {
+                mHandler.postDelayed(new Runnable() {
+                    public void run() {
+                        setupRelatedMovieListRow();
+                    }
+                }, 5000);
+            } else{
+                mSelectedMovie=updatedVideo;
+                setupRelatedMovieListRow();
+            }
+
             System.out.println(mSelectedMovie.toCompactString());
-            mHandler.postDelayed(new Runnable() {
-                public void run() {
-                    setupRelatedMovieListRow();
-                }
-            }, 5000);
         } else {
             Intent intent = new Intent(getActivity(), MainActivity.class);
             startActivity(intent);
@@ -182,7 +191,17 @@ public class VideoDetailsFragment extends DetailsFragment {
 
     public void setupRelatedMovieListRow() {
         String subcategories[] = {getString(R.string.related_movies)};
-        List<Video> list = MainActivity.data.getRelated();
+        List<Video> list = new ArrayList<>();
+        for (String g: mSelectedMovie.getRelatedVideoArray()){
+            Video candidate = MainActivity.data.getVideo(g);
+            if (null == candidate) {
+                list.add(new Video("https://www.bitchute.com/" + g));
+            }
+            else {
+                list.add(candidate);
+            }
+        }
+
         if (null != list) {
             Collections.shuffle(list);
             System.out.println("setting "+ list.size()+" related videos");
@@ -193,7 +212,7 @@ public class VideoDetailsFragment extends DetailsFragment {
             HeaderItem header = new HeaderItem(0, subcategories[0]);
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
-            MainActivity.data.getDescription().setText(mSelectedMovie.getDescription());
+           // MainActivity.data.getDescription().setText(mSelectedMovie.getDescription());
             System.out.println(mSelectedMovie.toCompactString());
         }
     }

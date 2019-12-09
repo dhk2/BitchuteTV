@@ -1,11 +1,11 @@
 package anticlimacticteleservices.bitchutetv;
 
-
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 
 @Entity(tableName = "Feed_Item")
@@ -69,6 +69,8 @@ class Video implements Serializable,Comparable<Video>
     private Boolean keep;
     @ColumnInfo(name = "last_scrape")
     private Long lastScrape;
+    @ColumnInfo(name ="related_videos")
+    private String relatedVideos;
 
     public Video()
     {
@@ -354,7 +356,7 @@ class Video implements Serializable,Comparable<Video>
             bits = bits+ " errors:"+errors;
 
         return("["+ID+"] ("+authorID+")"+ author +":"+title +  "\n" +
-                "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+description);
+                "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+bits);
     }
 
 
@@ -376,6 +378,10 @@ class Video implements Serializable,Comparable<Video>
         return "https://www.youtube.com/watch?v="+this.youtubeID;
     }
 
+ //   public ArrayList<Comment> getComments(){
+//        //comments disabled until they can be roomiied
+ //       return null;
+ //   }
     public boolean match(String matchID){
         return (matchID.equals(sourceID));
     }
@@ -503,5 +509,35 @@ class Video implements Serializable,Comparable<Video>
 
     public void setLastScrape(Long lastScrape) {
         this.lastScrape = lastScrape;
+    }
+
+    public String getRelatedVideos() {
+        return relatedVideos;
+    }
+
+    public ArrayList <String> getRelatedVideoArray(){
+        ArrayList array = new ArrayList<Video>();
+        if (null==relatedVideos){
+            return array;
+        }
+        for (String g :relatedVideos.split("\n")){
+            array.add(g);
+        }
+        return array;
+    }
+
+    public void setRelatedVideos(String relatedVideos) {
+        this.relatedVideos = relatedVideos;
+    }
+
+    public void addRelatedVideos(String video) {
+        this.relatedVideos = relatedVideos+video+"\n";
+    }
+    public void setrelatedVideos (ArrayList <String> related){
+        String builder ="";
+        for (String g : related){
+            builder =builder+g+"\n";
+        }
+        this.relatedVideos=builder;
     }
 }

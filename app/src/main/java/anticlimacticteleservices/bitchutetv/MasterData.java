@@ -9,18 +9,11 @@ public class MasterData {
     ArrayList <Video> popular;
     ArrayList <Video> history;
     ArrayList <Video> trending;
-    ArrayList <Video> related;
     ArrayList <Video> all;
     boolean scraping;
     TextView description;
+    ArrayList <Video> scrapedVideos;
 
-    public ArrayList<Video> getRelated() {
-        return related;
-    }
-
-    public void setRelated(ArrayList<Video> related) {
-        this.related = related;
-    }
 
     MasterData (){
         feed = new ArrayList<Video>();
@@ -29,6 +22,7 @@ public class MasterData {
         trending = new ArrayList<Video>();
         all = new ArrayList<Video>();
         scraping=true;
+        scrapedVideos=new ArrayList<Video>();
     }
     public ArrayList<Video> getFeed() {
         return feed;
@@ -110,5 +104,48 @@ public class MasterData {
 
     public void setScraping(boolean scraping) {
         this.scraping = scraping;
+    }
+
+    public ArrayList<Video> getScrapedVideos() {
+        return scrapedVideos;
+    }
+
+    public void setScrapedVideos(ArrayList<Video> scrapedVideos) {
+        this.scrapedVideos = scrapedVideos;
+    }
+
+    public void addScrapedVideos(Video v){
+        scrapedVideos.add(v);
+    }
+    public Video getScrapedVideo(Video v){
+        for (Video scraped : scrapedVideos){
+            if (v.getSourceID().equals(scraped.getSourceID())){
+                System.out.println("scraped video found:"+scraped.toCompactString());
+                return scraped;
+
+            }
+        }
+        return null;
+    }
+    public Video getVideo(String g){
+        if (null==g) {
+            System.out.println("trying to find a null video in all"+g);
+        }
+        else
+        {
+            for (Video scraped : scrapedVideos) {
+                if (!(null==scraped)) {
+                    if (g.equals(scraped.getSourceID())) {
+                        return scraped;
+                    }
+                }
+            }
+            for (Video vid : all) {
+                if (g.equals(vid.getSourceID())) {
+                    return vid;
+                }
+            }
+        }
+        return null;
     }
 }
