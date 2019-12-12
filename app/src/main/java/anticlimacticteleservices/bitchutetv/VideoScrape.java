@@ -43,7 +43,7 @@ public class VideoScrape extends AsyncTask<Video,Video,Video> {
     @Override
     protected void onPostExecute(Video video) {
         super.onPostExecute(video);
-        Log.v("Video-Scrape","Post-execute");
+        Log.v("Video-Scrape","Post-execute "+video.toCompactString());
     }
     @Override
     protected Video doInBackground(Video... videos) {

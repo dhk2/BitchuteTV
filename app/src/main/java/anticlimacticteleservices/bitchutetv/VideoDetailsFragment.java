@@ -33,7 +33,6 @@ import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.OnActionClickedListener;
 import androidx.leanback.widget.OnItemViewClickedListener;
-import androidx.leanback.widget.OnItemViewSelectedListener;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
@@ -42,6 +41,8 @@ import androidx.core.content.ContextCompat;
 
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -65,7 +66,7 @@ public class VideoDetailsFragment extends DetailsFragment {
     private static final int DETAIL_THUMB_HEIGHT = 274;
     private static final int NUM_COLS = 20;
 
-    private Video mSelectedMovie;
+    private Video mSelectedVideo;
     private Handler mHandler = new Handler();
     private ArrayObjectAdapter mAdapter;
     private ClassPresenterSelector mPresenterSelector;
@@ -79,30 +80,31 @@ public class VideoDetailsFragment extends DetailsFragment {
 
         mDetailsBackground = new DetailsFragmentBackgroundController(this);
 
-        mSelectedMovie =
+        mSelectedVideo =
                 (Video) getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
-        if (mSelectedMovie != null) {
+        if (mSelectedVideo != null) {
             mPresenterSelector = new ClassPresenterSelector();
             mAdapter = new ArrayObjectAdapter(mPresenterSelector);
 
-            setOnItemViewClickedListener(new ItemViewClickedListener());
+           // setOnItemViewClickedListener(new ItemViewClickedListener());
+            Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+            if (null == updatedVideo){
+                System.out.println("Video not in database");
+            }
+            else {
+                if (updatedVideo.getMp4().isEmpty()){
+                    System.out.println("video exists but mp4 is still not set");
+                }
+                else {
+                    mSelectedVideo = updatedVideo;
+                }
+            }
             setupDetailsOverviewRow();
             setupDetailsOverviewRowPresenter();
             setAdapter(mAdapter);
-            initializeBackground(mSelectedMovie);
-            Video updatedVideo=MainActivity.data.getScrapedVideo(mSelectedMovie);
-            if (null == updatedVideo) {
-                mHandler.postDelayed(new Runnable() {
-                    public void run() {
-                        setupRelatedMovieListRow();
-                    }
-                }, 5000);
-            } else{
-                mSelectedMovie=updatedVideo;
-                setupRelatedMovieListRow();
-            }
-
-            System.out.println(mSelectedMovie.toCompactString());
+            initializeBackground(mSelectedVideo);
+            setupRelatedMovieListRow();
+            System.out.println(mSelectedVideo.toCompactString());
         } else {
             Intent intent = new Intent(getActivity(), MainActivity.class);
             startActivity(intent);
@@ -127,14 +129,14 @@ public class VideoDetailsFragment extends DetailsFragment {
     }
 
     private void setupDetailsOverviewRow() {
-        Log.d(TAG, "doInBackground: " + mSelectedMovie.toString());
-        final DetailsOverviewRow row = new DetailsOverviewRow(mSelectedMovie);
+        Log.d(TAG, "doInBackground: " + mSelectedVideo.toString());
+        final DetailsOverviewRow row = new DetailsOverviewRow(mSelectedVideo);
         row.setImageDrawable(
                 ContextCompat.getDrawable((Context)this.getActivity(), R.drawable.default_background));
         int width = convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_WIDTH);
         int height = convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_HEIGHT);
         Glide.with(getActivity())
-                .load(mSelectedMovie.getThumbnail())
+                .load(mSelectedVideo.getThumbnail())
                 .centerCrop()
                 .error(R.drawable.default_background)
                 .into(new SimpleTarget<GlideDrawable>(width, height) {
@@ -177,9 +179,24 @@ public class VideoDetailsFragment extends DetailsFragment {
         detailsPresenter.setOnActionClickedListener(new OnActionClickedListener() {
             @Override
             public void onActionClicked(Action action) {
+
+                Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+                if (null == updatedVideo){
+                    System.out.println("Video not in database");
+                }
+                else {
+                    if (updatedVideo.getMp4().isEmpty()){
+                        System.out.println("video exists but mp4 is still not set");
+                    }
+                    else {
+                        mSelectedVideo = updatedVideo;
+                    }
+                }
+
+
                 if (action.getId() == ACTION_WATCH_TRAILER) {
                     Intent intent = new Intent(getActivity(), PlaybackActivity.class);
-                    intent.putExtra(DetailsActivity.VIDEO, mSelectedMovie);
+                    intent.putExtra(DetailsActivity.VIDEO, mSelectedVideo);
                     startActivity(intent);
                 } else {
                     Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
@@ -192,7 +209,7 @@ public class VideoDetailsFragment extends DetailsFragment {
     public void setupRelatedMovieListRow() {
         String subcategories[] = {getString(R.string.related_movies)};
         List<Video> list = new ArrayList<>();
-        for (String g: mSelectedMovie.getRelatedVideoArray()){
+        for (String g: mSelectedVideo.getRelatedVideoArray()){
             Video candidate = MainActivity.data.getVideo(g);
             if (null == candidate) {
                 list.add(new Video("https://www.bitchute.com/" + g));
@@ -212,8 +229,8 @@ public class VideoDetailsFragment extends DetailsFragment {
             HeaderItem header = new HeaderItem(0, subcategories[0]);
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
-           // MainActivity.data.getDescription().setText(mSelectedMovie.getDescription());
-            System.out.println(mSelectedMovie.toCompactString());
+           // MainActivity.data.getDescription().setText(mSelectedVideo.getDescription());
+            System.out.println(mSelectedVideo.toCompactString());
         }
     }
 
@@ -223,27 +240,52 @@ public class VideoDetailsFragment extends DetailsFragment {
         return Math.round((float) dp * density);
     }
 
-    private final class ItemViewClickedListener implements OnItemViewClickedListener {
-        @Override
-        public void onItemClicked(
-                Presenter.ViewHolder itemViewHolder,
-                Object item,
-                RowPresenter.ViewHolder rowViewHolder,
-                Row row) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+System.out.println("key pressed damit");
+return true;
+    }
 
-            if (item instanceof Video) {
-                Log.d(TAG, "Item: " + item.toString());
-                Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                intent.putExtra(getResources().getString(R.string.movie), mSelectedMovie);
 
-                Bundle bundle =
-                        ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                getActivity(),
-                                ((ImageCardView) itemViewHolder.view).getMainImageView(),
-                                DetailsActivity.SHARED_ELEMENT_NAME)
-                                .toBundle();
-                getActivity().startActivity(intent, bundle);
+    public void onItemClicked(
+            Presenter.ViewHolder itemViewHolder,
+            Object item,
+            RowPresenter.ViewHolder rowViewHolder,
+            Row row) {
+        Video updated = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+        if (null == updated) {
+            System.out.println("video not found in database " + mSelectedVideo.toCompactString());
+        } else {
+            if (updated.getMp4().isEmpty()) {
+                System.out.println("still not updated with Mp4 value");
             }
+            else {
+                mSelectedVideo=updated;
+            }
+        }
+        if (item instanceof Video) {
+            Log.d(TAG, "Item: " + item.toString());
+            Video video = (Video) item;
+            updated = MainActivity.data.getVideo(video.getSourceID());
+            if (null == updated) {
+                System.out.println("video not found in database " + video.toCompactString());
+            } else {
+                if (updated.getMp4().isEmpty()) {
+                    System.out.println("still not updated with Mp4 value");
+                }
+                else {
+                    video=updated;
+                }
+            }
+            Intent intent = new Intent(getActivity(), DetailsActivity.class);
+            intent.putExtra(getResources().getString(R.string.movie), video);
+
+            Bundle bundle =
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(
+                            getActivity(),
+                            ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                            DetailsActivity.SHARED_ELEMENT_NAME)
+                            .toBundle();
+            getActivity().startActivity(intent, bundle);
         }
     }
 }

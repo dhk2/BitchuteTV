@@ -27,14 +27,12 @@ public class HomeVideoScrape extends AsyncTask<Video,Video,Video> {
         protected void onPreExecute() {
             super.onPreExecute();
             Log.v("Video-Scrape","Pre-execute");
-            MainActivity.data.setScraping(true);
         }
         @Override
         protected void onPostExecute(Video video) {
             super.onPostExecute(video);
-            MainActivity.data.addScrapedVideos(video);
-            Log.v("Video-Scrape","Post-execute");
-            MainActivity.data.setScraping(false);
+            MainActivity.data.updateAll(video);
+            Log.v("Video-Scrape","Post-execute"+video.toCompactString());
         }
         @Override
         protected Video doInBackground(Video... videos) {

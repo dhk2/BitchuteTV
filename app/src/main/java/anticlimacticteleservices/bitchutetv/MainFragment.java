@@ -353,7 +353,9 @@ public class MainFragment extends BrowseFragment {
         protected String doInBackground(String... params) {
             String thumbnail = "";
             try {
+
                 doc = Jsoup.connect("https://www.bitchute.com/#listing-subscribed").get();
+                System.out.println("loading bitchute home page");
                 Elements results = doc.getElementsByClass("video-card");
                 for (Element r : results){
                     Video nv = new Video("https://www.bitchute.com"+r.getElementsByTag("a").first().attr("href"));
@@ -369,7 +371,8 @@ public class MainFragment extends BrowseFragment {
                     } else {
                         System.out.println(nv.getUrl());
                     }
-                    MainActivity.data.addPopular(nv);
+                    nv.setCategory("popular");
+                    MainActivity.data.addAll(nv);
                     //System.out.println("popular "+nv.getTitle());
                 }
             } catch (MalformedURLException e) {
@@ -393,7 +396,8 @@ public class MainFragment extends BrowseFragment {
                 nv.setDescription(r.getElementsByClass("video-trending-channel").first().text());
                 nv.setHackDateString(r.getElementsByClass("video-trending-details").first().text());
                 //System.out.println(r.getElementsByClass("video-duration").first().text());
-                MainActivity.data.addTrending(nv);
+                nv.setCategory("trending");
+                MainActivity.data.addAll(nv);
             }
             System.out.println("parsed "+MainActivity.data.getTrending().size()+ " Trending videos");
 
