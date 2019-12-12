@@ -53,6 +53,7 @@ public class Bitchute {
                 //System.out.println(r.getElementsByClass("video-duration").first().text());
                 foundVideos.add(nv);
             }
+
         }
         Log.v("bitchute-class", (Integer.toString(foundVideos.size()))+"Videos found");
         return foundVideos;

@@ -88,6 +88,7 @@ public class VideoDetailsFragment extends DetailsFragment {
 
            // setOnItemViewClickedListener(new ItemViewClickedListener());
             Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+            System.out.println("updated video returned "+updatedVideo.toCompactString());
             if (null == updatedVideo){
                 System.out.println("Video not in database");
             }
@@ -181,6 +182,7 @@ public class VideoDetailsFragment extends DetailsFragment {
             public void onActionClicked(Action action) {
 
                 Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+                System.out.println("updated video returned "+updatedVideo.toCompactString());
                 if (null == updatedVideo){
                     System.out.println("Video not in database");
                 }

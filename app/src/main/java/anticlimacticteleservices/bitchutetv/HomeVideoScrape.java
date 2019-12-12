@@ -12,12 +12,14 @@ import androidx.room.Room;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static android.content.Context.DOWNLOAD_SERVICE;
 
@@ -41,6 +43,7 @@ public class HomeVideoScrape extends AsyncTask<Video,Video,Video> {
             System.out.println("attempting to scrape"+nv.toCompactString());
             try {
                 Document doc = Jsoup.connect(nv.getBitchuteUrl()).get();
+                //System.out.println(doc);
                 nv.setCategory(doc.getElementsByClass("video-detail-list").first().getElementsByTag("a").first().text());
                 nv.setDescription(doc.getElementsByClass("full hidden").toString());
                 nv.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
@@ -51,6 +54,13 @@ public class HomeVideoScrape extends AsyncTask<Video,Video,Video> {
                     MainActivity.data.addAll(v);
                     nv.addRelatedVideos(v.getSourceID());
                 }
+                Elements channel = doc.getElementsByClass("channel-banner");
+                String c = channel.first().getElementsByAttribute("href").first().attr("href");
+                String g="";
+                for (String a :c.split("/")) {
+                    g=a;
+                }
+                nv.setAuthor(g);
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());

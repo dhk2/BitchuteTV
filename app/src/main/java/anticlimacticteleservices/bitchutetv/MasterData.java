@@ -53,9 +53,27 @@ public class MasterData {
         this.all = all;
     }
     public void addAll(Video vid){
+        for (Video v : all){
+            if (vid.getSourceID().equals(v.getSourceID())){
+                System.out.println("rejecting duplicate video add attempt, database "+v.toCompactString()+"\n attempted add "+vid.toCompactString() );
+                if (vid.getMp4().isEmpty()){
+                    System.out.println("attempted add isn't scraaped");
+                    return;
+                }
+                else {
+                    System.out.println("updating database");
+                    v=vid;
+                    return;
+                }
+            }
+        }
         all.add(vid);
     }
     public void updateAll(Video vid){
+        if (vid.getMp4().isEmpty()){
+            System.out.println("trying to update with nonscraped video");
+            return;
+        }
         for (Video v :  all){
             if (v.getSourceID().equals(vid.getSourceID())){
                 v=vid;
