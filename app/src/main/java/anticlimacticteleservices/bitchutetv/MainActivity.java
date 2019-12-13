@@ -32,12 +32,12 @@ import java.util.Date;
  * Main Activity class that loads {@link MainFragment}.
  */
 public class MainActivity extends Activity {
-    public static MasterData data = new MasterData();
+    public static MasterData data;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        data = new MasterData(this);
     }
 
 }

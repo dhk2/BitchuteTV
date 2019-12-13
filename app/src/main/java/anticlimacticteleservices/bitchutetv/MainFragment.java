@@ -15,15 +15,12 @@
 package anticlimacticteleservices.bitchutetv;
 
 import android.app.Dialog;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 
 import androidx.leanback.app.BackgroundManager;
@@ -62,7 +59,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
@@ -71,8 +67,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import static android.content.Context.DOWNLOAD_SERVICE;
 
 public class MainFragment extends BrowseFragment {
     private static final String TAG = "MainFragment";
@@ -93,6 +87,9 @@ public class MainFragment extends BrowseFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
+
+        loadDB task = new loadDB();
+        task.execute();
 
         super.onActivityCreated(savedInstanceState);
 
@@ -123,35 +120,36 @@ public class MainFragment extends BrowseFragment {
         ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         for (int j = 0; j < list.size(); j++) {
             listRowAdapter.add(list.get(j));
-           // System.out.println("popular "+j+" "+list.get(j).getTitle());
         }
         HeaderItem header = new HeaderItem(0, "Popular");
         rowsAdapter.add(new ListRow(header, listRowAdapter));
 
-
         list = MainActivity.data.getTrending();
         ArrayObjectAdapter listRowAdapter2 = new ArrayObjectAdapter(cardPresenter);
-
         for (int j = 0; j < list.size(); j++) {
             listRowAdapter2.add(list.get(j));
-          //  System.out.println("trending "+j+" "+list.get(j).getTitle());
         }
         header = new HeaderItem(1, "Trending");
         rowsAdapter.add(new ListRow(header, listRowAdapter2));
 
-
-        list = MainActivity.data.getAll();
+        list = MainActivity.data.getAllVideos();
         Collections.shuffle(list);
-        ArrayObjectAdapter listRowAdapter3 = new ArrayObjectAdapter(cardPresenter);
-
+        listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         for (int j = 0; j < list.size(); j++) {
-            listRowAdapter3.add(list.get(j));
+            listRowAdapter.add(list.get(j));
         }
         header = new HeaderItem(2, "All");
-        rowsAdapter.add(new ListRow(header, listRowAdapter3));
+        rowsAdapter.add(new ListRow(header, listRowAdapter));
 
-        HeaderItem gridHeader = new HeaderItem(3, "PREFERENCES");
+        List <Channel> cList = MainActivity.data.getAllChannels();
+        listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        for (int j = 0; j < cList.size(); j++) {
+            listRowAdapter.add(cList.get(j));
+        }
+        header = new HeaderItem(3,"Suggested Channels");
+        rowsAdapter.add(new ListRow(header,listRowAdapter));
 
+        HeaderItem gridHeader = new HeaderItem(4, "PREFERENCES");
         GridItemPresenter mGridPresenter = new GridItemPresenter();
         ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
        // gridRowAdapter.add(getResources().getString(R.string.grid_view));
@@ -230,46 +228,34 @@ public class MainFragment extends BrowseFragment {
 
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
-        public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
-                                  RowPresenter.ViewHolder rowViewHolder, Row row) {
-
+        public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
             if (item instanceof Video) {
                 Video video = (Video) item;
                 Log.d(TAG, "Item: " + item.toString());
-
-                if (item instanceof Video) {
-                    if (null == video) {
-                        System.out.println("You screwed up bad");
-                    } else {
-                        Video v = MainActivity.data.getVideo(video.getSourceID());
-                        if (null == v) {
-                            System.out.println("you screwed up");
-                        } else {
-                            if (!v.getMp4().isEmpty()) {
-                                video = v;
-                            }
-                        }
-                    }
-                    if (video.getMp4().isEmpty()) {
-                        HomeVideoScrape task = new HomeVideoScrape();
+                if (video.getMp4().isEmpty()) {
+                    Video v = MainActivity.data.getVideo(video.getSourceID());
+                    if (null == v || v.getMp4().isEmpty()) {
+                        ForeGroundVideoScrape task = new ForeGroundVideoScrape();
                         task.execute((Video) item);
+                    } else {
+                        video = v;
                     }
-                    System.out.println("meaning to launch"+video.toCompactString());
-                    Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                    intent.putExtra(DetailsActivity.VIDEO, video);
-
-                    Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                            getActivity(),
-                            ((ImageCardView) itemViewHolder.view).getMainImageView(),
-                            DetailsActivity.SHARED_ELEMENT_NAME)
-                            .toBundle();
-                    getActivity().startActivity(intent, bundle);
                 }
+                System.out.println("meaning to launch" + video.toCompactString());
+                Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                intent.putExtra(DetailsActivity.VIDEO, video);
+                Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        getActivity(),
+                        ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                        DetailsActivity.SHARED_ELEMENT_NAME)
+                        .toBundle();
+                getActivity().startActivity(intent, bundle);
             } else if (item instanceof String) {
-                if (item.equals("Authenticate")){
-                    final Dialog dialog = new Dialog((Context)getActivity());
+                if (item.equals("Authenticate")) {
+                    final Dialog dialog = new Dialog((Context) getActivity());
                     dialog.setContentView(R.layout.importdialog);
                     final WebView webView = dialog.findViewById(R.id.idplayer_window);
+                    webView.setWebViewClient(new WebViewClient());
                     WebSettings webSettings = webView.getSettings();
                     webSettings.setJavaScriptEnabled(true);
                     webView.getSettings().setUseWideViewPort(true);
@@ -278,8 +264,9 @@ public class MainFragment extends BrowseFragment {
                     webView.loadUrl("https://www.bitchute.com/subscriptions/");
                     dialog.show();
                 }
-                if (item.equals("Refresh")){
-                    new BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
+                if (item.equals("Refresh")) {
+                    //    new BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
+                    item = "no";
                 }
                 if (((String) item).contains(getString(R.string.error_fragment))) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
@@ -287,10 +274,11 @@ public class MainFragment extends BrowseFragment {
                 } else {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT).show();
                 }
+            } else if (item instanceof Channel) {
+                Channel channel = (Channel) item;
             }
         }
     }
-
     private final class ItemViewSelectedListener implements OnItemViewSelectedListener {
         @Override
         public void onItemSelected(
@@ -348,6 +336,7 @@ public class MainFragment extends BrowseFragment {
     private class BitchuteHomePage extends AsyncTask<String, String, String> {
         private String resp;
         Document doc;
+        String error="";
         final SimpleDateFormat bvsdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         @Override
         protected String doInBackground(String... params) {
@@ -372,15 +361,20 @@ public class MainFragment extends BrowseFragment {
                         System.out.println(nv.getUrl());
                     }
                     nv.setCategory("popular");
-                    MainActivity.data.addAll(nv);
-                    //System.out.println("popular "+nv.getTitle());
+                    MainActivity.data.addVideo(nv);
                 }
             } catch (MalformedURLException e) {
                 Log.e("Main-Bitchute-Home","Malformed URL: " + e.getMessage());
+                error=e.getMessage();
             } catch (IOException e) {
                 Log.e("Main-Bitchute-Home","I/O Error: " + e.getMessage());
+                error=e.getMessage();
             } catch(NullPointerException e){
                 Log.e("Main-Bitchute-Home","Null pointer exception"+e.getMessage());
+                error=e.getMessage();
+            }
+            if (!error.isEmpty()){
+                return null;
             }
             System.out.println("parsed "+MainActivity.data.getPopular().size()+ " Popular videos");
             Elements results = doc.getElementsByClass("video-trending-container");
@@ -397,13 +391,16 @@ public class MainFragment extends BrowseFragment {
                 nv.setHackDateString(r.getElementsByClass("video-trending-details").first().text());
                 //System.out.println(r.getElementsByClass("video-duration").first().text());
                 nv.setCategory("trending");
-                MainActivity.data.addAll(nv);
+                MainActivity.data.addVideo(nv);
             }
+            List <Channel> test = Bitchute.getChannels(doc);
+            System.out.println(test.size()+" channels found on home page");
+            MainActivity.data.addChannels(test);
             System.out.println("parsed "+MainActivity.data.getTrending().size()+ " Trending videos");
 
             results = doc.getElementsByClass("video-card");
 
-            System.out.println("parsed "+MainActivity.data.getAll().size()+ " All videos");
+            System.out.println("parsed "+MainActivity.data.getAllVideos().size()+ " All videos");
 
             return "done";
 
@@ -411,7 +408,14 @@ public class MainFragment extends BrowseFragment {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            loadRows();
+            System.out.println(error);
+            if (error.isEmpty()) {
+                loadRows();
+            }
+            else {
+                System.out.println(error);
+                Toast.makeText(getActivity(),error,Toast.LENGTH_LONG);
+            }
         }
     }
 }

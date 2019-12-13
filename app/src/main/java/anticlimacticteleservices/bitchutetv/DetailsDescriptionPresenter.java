@@ -16,6 +16,8 @@ package anticlimacticteleservices.bitchutetv;
 
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
 
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
@@ -41,7 +43,12 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
         }
        // System.out.println(video.toCompactString());
         viewHolder.getTitle().setText(video.getTitle());
-        viewHolder.getSubtitle().setText(video.getAuthor());
-        viewHolder.getBody().setText(video.getDescription());
+        viewHolder.getSubtitle().setText(video.getAuthor()+" "+video.getHackDateString());
+        String description = video.getDescription();
+        //description.replace("<p>","\\n");
+        //Document doc = Jsoup.parse(description);
+        //viewHolder.getBody().setLinksClickable(true);
+        Spanned sp = Html.fromHtml(description);
+        viewHolder.getBody().setText(sp);
     }
 }

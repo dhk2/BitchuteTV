@@ -58,4 +58,28 @@ public class Bitchute {
         Log.v("bitchute-class", (Integer.toString(foundVideos.size()))+"Videos found");
         return foundVideos;
     }
+    public static ArrayList getChannels (Document doc) {
+        ArrayList<Channel> foundChannels = new ArrayList<Channel>();
+        try {
+            Elements results = doc.getElementsByClass("channel-card");
+            System.out.println(results.first().text());
+            System.out.println(results.text());
+            System.out.println(results);
+            for (Element r : results){
+                Channel nc = new Channel(("https://www.bitchute.com"+r.getElementsByTag("a").first().attr("href")));
+                nc.setThumbnailurl(r.getElementsByAttribute("data-src").last().attr("data-src"));
+                nc.setThumbnail(nc.getThumbnailurl());
+                nc.setAuthor(r.text());
+                nc.setTitle(r.text());
+                System.out.println(nc.toCompactString());
+                foundChannels.add(nc);
+            }
+
+        } catch(NullPointerException e){
+            Log.e("Main-Bitchute-Home","Null pointer exception"+e.getMessage());
+            //System.out.println(doc);
+        }
+
+        return foundChannels;
+    }
 }

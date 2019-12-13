@@ -52,6 +52,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /*
@@ -85,12 +86,34 @@ public class VideoDetailsFragment extends DetailsFragment {
         if (mSelectedVideo != null) {
             mPresenterSelector = new ClassPresenterSelector();
             mAdapter = new ArrayObjectAdapter(mPresenterSelector);
-
-           // setOnItemViewClickedListener(new ItemViewClickedListener());
             Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
             System.out.println("updated video returned "+updatedVideo.toCompactString());
-            if (null == updatedVideo){
-                System.out.println("Video not in database");
+            if (null == updatedVideo || updatedVideo.getMp4().isEmpty()){
+                System.out.println("Video not in database, setting up to check again in 5");
+
+                mHandler.postDelayed(new Runnable() {
+                    public void run() {
+                        System.out.println("checking for mp4 again");
+                        Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+                        if (null == updatedVideo || updatedVideo.getMp4().isEmpty()){
+                            System.out.println("Video not in database after additional pause");
+                            Toast.makeText(getActivity(),"Unable to reach video information", Toast.LENGTH_LONG);
+                            return;
+                        }
+                        else {
+                            mSelectedVideo = updatedVideo;
+                            mAdapter.clear();
+                            setupDetailsOverviewRow();
+                            setupDetailsOverviewRowPresenter();
+                            setAdapter(mAdapter);
+                            initializeBackground(mSelectedVideo);
+                            setupRelatedMovieListRow();
+                        }
+                    }
+                }, 5000);
+
+
+
             }
             else {
                 if (updatedVideo.getMp4().isEmpty()){
@@ -187,12 +210,39 @@ public class VideoDetailsFragment extends DetailsFragment {
                     System.out.println("Video not in database");
                 }
                 else {
-                    if (updatedVideo.getMp4().isEmpty()){
-                        System.out.println("video exists but mp4 is still not set");
-                    }
-                    else {
-                        mSelectedVideo = updatedVideo;
-                    }
+                        if (updatedVideo.getMp4().isEmpty()) {
+                            System.out.println("video exists but mp4 is still not set");
+                            mHandler.postDelayed(new Runnable() {
+                                public void run() {
+                                    System.out.println("checking for mp4 again");
+                                    Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+                                    if (null == updatedVideo || updatedVideo.getMp4().isEmpty()){
+                                        System.out.println("Video not in database after additional pause");
+                                        Toast.makeText(getActivity(),"Unable to reach video information", Toast.LENGTH_LONG);
+                                        return;
+                                    }
+                                    else {
+                                        mSelectedVideo = updatedVideo;
+                                        mAdapter.clear();
+                                        setupDetailsOverviewRow();
+                                        setupDetailsOverviewRowPresenter();
+                                        setAdapter(mAdapter);
+                                        initializeBackground(mSelectedVideo);
+                                        setupRelatedMovieListRow();
+                                    }
+                                }
+                            }, 2000);
+                            Toast.makeText(getActivity(),"Fetching video information", Toast.LENGTH_SHORT);
+                        } else {
+                            mSelectedVideo = updatedVideo;
+                            mAdapter.clear();
+                            setupDetailsOverviewRow();
+                            setupDetailsOverviewRowPresenter();
+                            setAdapter(mAdapter);
+                            initializeBackground(mSelectedVideo);
+                            setupRelatedMovieListRow();
+                        }
+
                 }
 
 

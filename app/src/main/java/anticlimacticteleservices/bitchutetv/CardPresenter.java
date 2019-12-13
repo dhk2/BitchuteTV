@@ -79,20 +79,35 @@ public class CardPresenter extends Presenter {
     @Override
     public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object item) {
         //        Movie movie = (Movie) item;
-        Video video = (Video) item;
         ImageCardView cardView = (ImageCardView) viewHolder.view;
-
         Log.d(TAG, "onBindViewHolder");
-        if (video.getThumbnail() != null) {
-            cardView.setTitleText(video.getTitle());
-            cardView.setContentText(video.getAuthor());
-            cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
-            Glide.with(viewHolder.view.getContext())
-                    .load(video.getThumbnailurl())
-                    .centerCrop()
-                    .error(mDefaultCardImage)
-                    .into(cardView.getMainImageView());
+        if (item instanceof Video){
+            Video video = (Video) item;
+            if (video.getThumbnail() != null) {
+                cardView.setTitleText(video.getTitle());
+                cardView.setContentText(video.getAuthor());
+                cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
+                Glide.with(viewHolder.view.getContext())
+                        .load(video.getThumbnailurl())
+                        .centerCrop()
+                        .error(mDefaultCardImage)
+                        .into(cardView.getMainImageView());
+            }
         }
+        if (item instanceof Channel){
+            Channel channel = (Channel) item;
+            if (channel.getThumbnail() != null) {
+                cardView.setTitleText(channel.getTitle());
+                cardView.setContentText(channel.getAuthor());
+                cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
+                Glide.with(viewHolder.view.getContext())
+                        .load(channel.getThumbnailurl())
+                        .centerCrop()
+                        .error(mDefaultCardImage)
+                        .into(cardView.getMainImageView());
+            }
+        }
+
     }
 
     @Override
