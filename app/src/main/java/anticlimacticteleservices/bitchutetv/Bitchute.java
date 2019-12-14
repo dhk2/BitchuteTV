@@ -71,7 +71,7 @@ public class Bitchute {
                 nc.setThumbnail(nc.getThumbnailurl());
                 nc.setAuthor(r.text());
                 nc.setTitle(r.text());
-                System.out.println(nc.toCompactString());
+                //System.out.println(nc.toCompactString());
                 foundChannels.add(nc);
             }
 

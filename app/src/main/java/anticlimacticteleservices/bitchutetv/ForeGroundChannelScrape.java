@@ -20,7 +20,8 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        Log.v("Video-Scrape","Pre-execute");
+        Log.v("Channel-Scrape","Pre-execute");
+        System.out.println("passed channel");
     }
 
 
@@ -28,12 +29,27 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
     protected Channel doInBackground(Channel... channels) {
 
         Channel nc = channels[0];
-        System.out.println("attempting to scrape"+nc.toCompactString());
+        System.out.println("passed channel");
+        System.out.println(nc.toDebugString());
+        System.out.println("live data");
+        Channel screwed = MainActivity.data.getChannelById(nc.getSourceID());
+        if (screwed != null){
+            System.out.println(MainActivity.data.getChannelById(nc.getSourceID()).toDebugString());
+        }
+        else{
+            System.out.println("nothing in live data");
+        }
         try {
             Document doc = Jsoup.connect(nc.getBitchuteUrl()).get();
-            System.out.println(doc.getElementsByClass("channel-about-details").text());
-            System.out.println(doc.getElementsByClass("col-md-9 col-sm-8 col-xs-12").text());
-
+            nc.setDescription(doc.getElementsByClass("col-md-9 col-sm-8 col-xs-12").text());
+            nc.setDateHackString(doc.getElementsByClass("channel-about-details").first().text());
+            nc.setTitle(doc.getElementsByClass("name").text());
+            nc.setAuthor(nc.getTitle());
+            nc.setThumbnail(doc.getElementsByAttribute("data-src").last().attr("data-src"));
+            nc.setThumbnailurl(nc.getThumbnail());
+            if (nc.getDescription().isEmpty()){
+                nc.setDateHackString(nc.getDateHackString());
+            }
             ChannelDao channelDao;
             ChannelDatabase channelDatabase;
             channelDatabase = Room.databaseBuilder(MainActivity.data.getContext(), ChannelDatabase.class, "channeldb")
@@ -43,14 +59,42 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
             List test=channelDao.getChannelsBySourceID(nc.getSourceID());
             System.out.println(test.size());
             if (test.size()==0) {
+                System.out.println("no video in database, adding to database");
                 channelDao.insert(nc);
-                System.out.println("added channel to database supposably");
+                nc= channelDao.getChannelsBySourceID(nc.getSourceID()).get(0);
             }
             else{
-                channelDao.update(nc);
-                System.out.println("updated channel in database");
+                Channel archivedChannel = (Channel) test.get(0);
+                System.out.println("version pulled out of database for comparison" +archivedChannel.toDebugString());
+                    archivedChannel.setDescription(nc.getDescription());
+                    archivedChannel.setDateHackString(nc.getDateHackString());
+                    archivedChannel.setTitle(nc.getTitle());
+                    archivedChannel.setThumbnailurl(nc.getThumbnail());
+                    archivedChannel.setThumbnail(nc.getThumbnailurl());
+                    archivedChannel.setAuthor(nc.getAuthor());
+                    channelDao.update(archivedChannel);
+                    nc = channelDao.getChannelsBySourceID(nc.getSourceID()).get(0);
             }
+            Channel testChannel=MainActivity.data.getChannelById(nc.getSourceID());
+            if (testChannel == null){
+                System.out.println("nothing in main, adding value" );
+                MainActivity.data.addChannel(nc);
+                System.out.println(MainActivity.data.getChannelById(nc.getSourceID()));
+            }
+            else {
+                System.out.println("updating main value");
+                MainActivity.data.updateChannel(nc);
+                System.out.println(MainActivity.data.getChannelById(nc.getSourceID()));
+            }
+            System.out.println("final db value "+channelDao.getChannelById(nc.getID()));
+            ArrayList <Video> videos = Bitchute.getVideos(doc);
+            for (Video v : videos){
+                v.setAuthorSourceID(nc.getBitchuteID());
+                MainActivity.data.addVideo(v);
+            }
+            //MainActivity.data.addVideos(Bitchute.getVideos(doc));
             System.out.println(channelDao.getChannels().size());
+            channelDatabase.close();
         } catch (IOException e) {
             e.printStackTrace();
             Log.e("Videoscrape","network failure in bitchute scrape for "+nc.toCompactString());

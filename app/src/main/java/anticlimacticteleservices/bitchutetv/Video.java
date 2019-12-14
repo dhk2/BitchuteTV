@@ -71,6 +71,8 @@ class Video implements Serializable,Comparable<Video>
     private Long lastScrape;
     @ColumnInfo(name ="related_videos")
     private String relatedVideos;
+    @ColumnInfo(name="author_source_id")
+    private String authorSourceID;
 
     public Video()
     {
@@ -99,6 +101,7 @@ class Video implements Serializable,Comparable<Video>
         this.errors=0l;
         this.keep=false;
         this.lastScrape=0l;
+        this.authorSourceID="";
     }
 
     public Video(String location)
@@ -138,6 +141,7 @@ class Video implements Serializable,Comparable<Video>
         this.errors=0l;
         this.keep=false;
         this.lastScrape=0l;
+        this.authorSourceID="";
 
     }
 
@@ -355,7 +359,7 @@ class Video implements Serializable,Comparable<Video>
         if (errors>0)
             bits = bits+ " errors:"+errors;
 
-        return("["+ID+"] ("+authorID+")"+ author +":"+title +  "\n" +
+        return("["+ID+"] ("+authorID+")"+ author +":"+title + " Source ID:"+authorSourceID+ "\n" +
                 "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+bits);
     }
 
@@ -539,5 +543,13 @@ class Video implements Serializable,Comparable<Video>
             builder =builder+g+"\n";
         }
         this.relatedVideos=builder;
+    }
+
+    public String getAuthorSourceID() {
+        return authorSourceID;
+    }
+
+    public void setAuthorSourceID(String authorSourceID) {
+        this.authorSourceID = authorSourceID;
     }
 }

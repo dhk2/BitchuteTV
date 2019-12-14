@@ -111,7 +111,6 @@ public class MainFragment extends BrowseFragment {
     }
 
     private void loadRows() {
-        //List<Video> list = Bitchute.getVideos("https://www.bitchute.com/#listing-popular");
         List<Video> list = MainActivity.data.getPopular();
         ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
@@ -125,12 +124,12 @@ public class MainFragment extends BrowseFragment {
         rowsAdapter.add(new ListRow(header, listRowAdapter));
 
         list = MainActivity.data.getTrending();
-        ArrayObjectAdapter listRowAdapter2 = new ArrayObjectAdapter(cardPresenter);
+        listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         for (int j = 0; j < list.size(); j++) {
-            listRowAdapter2.add(list.get(j));
+            listRowAdapter.add(list.get(j));
         }
         header = new HeaderItem(1, "Trending");
-        rowsAdapter.add(new ListRow(header, listRowAdapter2));
+        rowsAdapter.add(new ListRow(header, listRowAdapter));
 
         list = MainActivity.data.getAllVideos();
         Collections.shuffle(list);
@@ -275,7 +274,21 @@ public class MainFragment extends BrowseFragment {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT).show();
                 }
             } else if (item instanceof Channel) {
+
                 Channel channel = (Channel) item;
+                System.out.println("someone clicked on channel "+channel.toCompactString());
+                Log.d(TAG, "Item: " + item.toString());
+                ForeGroundChannelScrape task = new ForeGroundChannelScrape();
+                task.execute((Channel) item);
+
+                Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                intent.putExtra(DetailsActivity.VIDEO, channel);
+                Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        getActivity(),
+                        ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                        DetailsActivity.SHARED_ELEMENT_NAME)
+                        .toBundle();
+                getActivity().startActivity(intent, bundle);
             }
         }
     }

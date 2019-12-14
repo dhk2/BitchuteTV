@@ -56,13 +56,13 @@ public class MasterData {
     public void addVideo(Video vid){
         for (Video v : allVideos){
             if (vid.getSourceID().equals(v.getSourceID())){
-                System.out.println("rejecting duplicate video add attempt, database "+v.toCompactString()+"\n attempted add "+vid.toCompactString() );
+               // System.out.println("rejecting duplicate video add attempt, database "+v.toCompactString()+"\n attempted add "+vid.toCompactString() );
                 if (vid.getMp4().isEmpty()){
-                    System.out.println("attempted add isn't scraaped");
+                    //System.out.println("attempted add isn't scraaped");
                     return;
                 }
                 else {
-                    System.out.println("updating database");
+                   // System.out.println("updating database");
                     v=vid;
 
                     return;
@@ -109,6 +109,14 @@ public class MasterData {
     public void updateChannel(Channel chan) {
         for (Channel c:allChannels){
             if (c.getSourceID().equals(chan.getSourceID())){
+                if (!c.getSourceID().isEmpty()) {
+                    System.out.println("trying to overwrite channel "+c.getSourceID() +"with weaker data"+chan.getSourceID());
+                    return;
+                }
+                if (!c.getThumbnail().isEmpty()){
+                    System.out.println("tryuing to update thumbnail "+c.getThumbnail()+ " with "+chan.getThumbnail());
+                    return;
+                }
                 c=chan;
             }
         }
@@ -119,9 +127,16 @@ public class MasterData {
     public Channel getChannelById(String Id){
         for (Channel c: allChannels){
             if (c.getSourceID().equals(Id)){
+                System.out.println("found matching channel in db for "+Id);
                 return c;
             }
+            else{
+                System.out.println("This is bullshit "+c.getSourceID()+"+"+Id);
+
+            }
+
         }
+        System.out.println("no database entry for "+Id);
         return null;
     }
     public ArrayList <Channel> getAllChannels() {
@@ -129,7 +144,7 @@ public class MasterData {
     }
     public void addChannel(Channel chan){
         for (Channel c : allChannels){
-            System.out.println(chan.toCompactString());
+            //System.out.println(chan.toCompactString());
             if (chan.getSourceID().equals(c.getSourceID())) {
                 System.out.println("attempting to add an already existing channel");
                 return;
@@ -140,6 +155,12 @@ public class MasterData {
     public void addChannels(List<Channel> chans){
         for (Channel c : chans){
             addChannel(c);
+        }
+    }
+    public void addVideos(List <Video> vids){
+        for (Video v : vids){
+            System.out.println("mass adding video:"+v.toCompactString());
+            addVideo(v);
         }
     }
 }

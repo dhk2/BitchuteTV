@@ -7,7 +7,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 
-@Database(entities = {Channel.class}, version = 4, exportSchema = false)
+@Database(entities = {Channel.class}, version = 5, exportSchema = false)
 public abstract class ChannelDatabase extends RoomDatabase {
     private static anticlimacticteleservices.bitchutetv.ChannelDatabase INSTANCE;
 

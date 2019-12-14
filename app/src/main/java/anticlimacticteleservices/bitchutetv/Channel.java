@@ -48,6 +48,8 @@ class Channel implements Serializable{
     private String localPath;
     @ColumnInfo(name = "supported")
     private boolean supported;
+    @ColumnInfo(name="date_hack")
+    private String dateHackString;
 
     public Channel(){
         this.title="";
@@ -68,6 +70,7 @@ class Channel implements Serializable{
         this.errors=0;
         this.localPath="";
         this.supported=false;
+        this.dateHackString="";
     }
     public Channel(String url) {
         this.url = url;
@@ -101,6 +104,7 @@ class Channel implements Serializable{
         this.errors=0;
         this.localPath="";
         this.supported=false;
+        this.dateHackString="";
  //       toString();
     }
 
@@ -180,6 +184,13 @@ class Channel implements Serializable{
         return("title:"+this.title+"\n"+
                 "id:"+ID+" "+this.title+"("+url +")\n"+
                 "y:"+youtubeID+"b:"+bitchuteID+" Last Sync:"+new Date(lastsync)+" errors:"+this.errors+"\n");
+    }
+
+    public String toDebugString(){
+        return("title:"+this.title+"\n"+
+                "id:"+ID+" "+this.title+"("+url +")\n"+
+                "BitchuteID:"+bitchuteID+" Last Sync:"+new Date(lastsync)+" thumbnail"+this.thumbnailurl+"\n"+
+                "Description:"+description);
     }
 
     public boolean matches(String value){
@@ -320,5 +331,13 @@ class Channel implements Serializable{
     public void setLastCheck(Long bob){lastCheck=bob;}
     public void updateLastCheck() {
         lastCheck =new Date().getTime();
+    }
+
+    public String getDateHackString() {
+        return dateHackString;
+    }
+
+    public void setDateHackString(String dateHackString) {
+        this.dateHackString = dateHackString;
     }
 }

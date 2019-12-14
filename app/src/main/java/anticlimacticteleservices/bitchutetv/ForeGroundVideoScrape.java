@@ -57,7 +57,7 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
                 for (String a :c.split("/")) {
                     g=a;
                 }
-                nv.setBitchuteID(g);
+                nv.setAuthorSourceID(g);
                 nv.setAuthor((channel.first().getElementsByClass("name").text()));
 
                 VideoDao videoDao;
@@ -77,6 +77,7 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
                     System.out.println("updated video in database");
                 }
                 System.out.println(videoDao.getVideos().size());
+                videoDatabase.close();
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());
@@ -84,6 +85,8 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
             } catch (NullPointerException e){
                 e.printStackTrace();
             }
-        return nv;
+
+            return nv;
         }
+
     }

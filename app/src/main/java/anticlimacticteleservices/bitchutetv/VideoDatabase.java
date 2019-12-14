@@ -7,7 +7,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 
-@Database(entities = {Video.class}, version = 8, exportSchema = false)
+@Database(entities = {Video.class}, version = 9, exportSchema = false)
 public abstract class VideoDatabase extends RoomDatabase {
     private static VideoDatabase INSTANCE;
 
