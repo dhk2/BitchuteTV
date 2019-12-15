@@ -43,6 +43,7 @@ import androidx.core.content.ContextCompat;
 import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -55,16 +56,17 @@ import com.bumptech.glide.request.target.SimpleTarget;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /*
  * LeanbackDetailsFragment extends DetailsFragment, a Wrapper fragment for leanback details screens.
  * It shows a detailed view of video and its meta plus related videos.
  */
-public class VideoDetailsFragment extends DetailsFragment {
-    private static final String TAG = "VideoDetailsFragment";
+public class ChannelDetailsFragment extends DetailsFragment {
+    private static final String TAG = "ChannelDetailsFragment";
 
-    private static final int ACTION_WATCH = 1;
+    private static final int ACTION_WATCH_TRAILER = 1;
     private static final int ACTION_SUBSCRIBE = 2;
     private static final int ACTION_GOTO_CHANNEL = 3;
     private static final int DETAIL_THUMB_WIDTH = 274;
@@ -83,7 +85,7 @@ public class VideoDetailsFragment extends DetailsFragment {
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
-        setOnItemViewClickedListener(new VideoDetailsFragment.ItemViewClickedListener());
+        setOnItemViewClickedListener(new ChannelDetailsFragment.ItemViewClickedListener());
         mDetailsBackground = new DetailsFragmentBackgroundController(this);
         //looks ugly
         mSelectedItem = getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
@@ -115,6 +117,8 @@ public class VideoDetailsFragment extends DetailsFragment {
                         if (true) {
                             Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
                             if (null == updatedVideo || updatedVideo.getMp4().isEmpty()) {
+                                Toast.makeText(getActivity(), "Unable to reach video information", Toast.LENGTH_LONG);
+                                return;
                             } else {
                                 mSelectedVideo = updatedVideo;
                                 mAdapter.clear();
@@ -141,7 +145,7 @@ public class VideoDetailsFragment extends DetailsFragment {
             setAdapter(mAdapter);
             initializeBackground(mSelectedVideo);
             setupRelatedMovieListRow();
-           // System.out.println(mSelectedVideo.toCompactString());
+            // System.out.println(mSelectedVideo.toCompactString());
         }
         else if(mSelectedChannel != null){
             mPresenterSelector = new ClassPresenterSelector();
@@ -151,7 +155,7 @@ public class VideoDetailsFragment extends DetailsFragment {
             setAdapter(mAdapter);
             initializeBackground(mSelectedChannel);
             setupRelatedMovieListRow();
-           // System.out.println(mSelectedChannel.toCompactString());
+            // System.out.println(mSelectedChannel.toCompactString());
 
             if (mSelectedChannel.getDescription().isEmpty()) {
                 System.out.println("channel is missing data, waiting 5 seconds "+mSelectedChannel);
@@ -176,8 +180,8 @@ public class VideoDetailsFragment extends DetailsFragment {
             }
         }
         else {
-           Intent intent = new Intent(getActivity(), MainActivity.class);
-           startActivity(intent);
+            Intent intent = new Intent(getActivity(), MainActivity.class);
+            startActivity(intent);
         }
     }
 
@@ -240,28 +244,28 @@ public class VideoDetailsFragment extends DetailsFragment {
         int width = convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_WIDTH);
         int height = convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_HEIGHT);
         Glide.with(getActivity())
-            .load(thumbnail)
-            .centerCrop()
-            .error(R.drawable.default_background)
-            .into(new SimpleTarget<GlideDrawable>(width, height) {
-                @Override
-                public void onResourceReady(GlideDrawable resource,
-                                            GlideAnimation<? super GlideDrawable>
-                                                    glideAnimation) {
-                    Log.d(TAG, "details overview card image url ready: " + resource);
-                    row.setImageDrawable(resource);
-                    mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
-                }
-            });
+                .load(thumbnail)
+                .centerCrop()
+                .error(R.drawable.default_background)
+                .into(new SimpleTarget<GlideDrawable>(width, height) {
+                    @Override
+                    public void onResourceReady(GlideDrawable resource,
+                                                GlideAnimation<? super GlideDrawable>
+                                                        glideAnimation) {
+                        Log.d(TAG, "details overview card image url ready: " + resource);
+                        row.setImageDrawable(resource);
+                        mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
+                    }
+                });
         ArrayObjectAdapter actionAdapter = new ArrayObjectAdapter();
-        if (mSelectedVideo!=null && !mSelectedVideo.getMp4().isEmpty()) {
+        if (mSelectedVideo!=null) {
             actionAdapter.add(
-                                new Action(
-                                        ACTION_WATCH,
-                                        getResources().getString(R.string.watch_trailer_1)));
+                    new Action(
+                            ACTION_WATCH_TRAILER,
+                            getResources().getString(R.string.watch_trailer_1)));
             if (!mSelectedVideo.getAuthorSourceID().isEmpty()){
                 actionAdapter.add(
-                    new Action (
+                        new Action (
                                 ACTION_GOTO_CHANNEL,
                                 getResources().getString(R.string.goto_channel)));
             }
@@ -305,10 +309,12 @@ public class VideoDetailsFragment extends DetailsFragment {
                             System.out.println("video exists but mp4 is still not set");
                             mHandler.postDelayed(new Runnable() {
                                 public void run() {
-                                   // System.out.println("checking for mp4 again");
+                                    // System.out.println("checking for mp4 again");
                                     Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
                                     if (null == updatedVideo || updatedVideo.getMp4().isEmpty()) {
                                         System.out.println("Video not in database after additional pause");
+                                        Toast.makeText(getActivity(), "Unable to reach video information", Toast.LENGTH_LONG);
+                                        return;
                                     } else {
                                         mSelectedVideo = updatedVideo;
                                         mAdapter.clear();
@@ -334,7 +340,7 @@ public class VideoDetailsFragment extends DetailsFragment {
                     }
                 }
 
-                if (action.getId() == ACTION_WATCH) {
+                if (action.getId() == ACTION_WATCH_TRAILER) {
                     if (mSelectedVideo.getMp4().isEmpty()){
                         Video updated = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
                         if (null == updated) {
@@ -415,6 +421,7 @@ public class VideoDetailsFragment extends DetailsFragment {
             HeaderItem header = new HeaderItem(0, subcategories[0]);
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
+            // MainActivity.data.getDescription().setText(mSelectedVideo.getDescription());
         }
     }
 
@@ -425,8 +432,8 @@ public class VideoDetailsFragment extends DetailsFragment {
     }
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-System.out.println("key pressed damit");
-return true;
+        System.out.println("key pressed damit");
+        return true;
     }
 
 
@@ -473,7 +480,6 @@ return true;
             getActivity().startActivity(intent, bundle);
         }
     }
-
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
@@ -545,6 +551,4 @@ return true;
             }
         }
     }
-
-
 }

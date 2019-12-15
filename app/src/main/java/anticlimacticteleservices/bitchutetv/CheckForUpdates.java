@@ -211,7 +211,8 @@ channelloop:for (Channel chan :allChannels){
 
         Notification notificationBuilder =
                 new NotificationCompat.Builder(context, "anticlimacticteleservices.sic")
-                        .setSmallIcon(R.drawable.sic_round)
+                      //TODO put bitchutetv logo here
+                        //  .setSmallIcon(R.drawable.sic_round)
                         .setContentTitle(vid.getAuthor())
                         .setContentText(vid.getTitle())
                         .setPriority(Notification.PRIORITY_DEFAULT)

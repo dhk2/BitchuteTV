@@ -98,7 +98,7 @@ public class CardPresenter extends Presenter {
             Channel channel = (Channel) item;
             if (channel.getThumbnail() != null) {
                 cardView.setTitleText(channel.getTitle());
-                cardView.setContentText(channel.getBitchuteID());
+                cardView.setContentText(channel.getAuthor());
                 cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
                 Glide.with(viewHolder.view.getContext())
                         .load(channel.getThumbnailurl())

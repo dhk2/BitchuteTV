@@ -130,11 +130,6 @@ public class MasterData {
                 System.out.println("found matching channel in db for "+Id);
                 return c;
             }
-            else{
-                System.out.println("This is bullshit "+c.getSourceID()+"+"+Id);
-
-            }
-
         }
         System.out.println("no database entry for "+Id);
         return null;

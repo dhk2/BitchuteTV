@@ -55,7 +55,7 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
        }
        if (item instanceof Channel) {
            Channel channel = (Channel) item;
-           System.out.println(channel);
+           System.out.println("ddp attempting to display channel :"+channel.toDebugString());
            Channel c = MainActivity.data.getChannelById(channel.getSourceID());
            if (null == c){
                MainActivity.data.addChannel(channel);
@@ -70,6 +70,7 @@ public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPrese
            String description = channel.getDescription();
            Spanned sp = Html.fromHtml(description);
            viewHolder.getBody().setText(sp);
+           viewHolder.getBody().setHorizontallyScrolling(true);
        }
     }
 }

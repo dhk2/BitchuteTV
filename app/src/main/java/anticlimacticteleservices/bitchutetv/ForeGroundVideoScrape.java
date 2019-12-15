@@ -24,7 +24,11 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
         @Override
         protected void onPostExecute(Video video) {
             super.onPostExecute(video);
-            MainActivity.data.updateVideo(video);
+            Channel test = MainActivity.data.getChannelById(video.getSourceID());
+            if (null == test || test.getThumbnail().isEmpty()){
+                new ForeGroundChannelScrape();
+                System.out.println("launching channel scrape for "+video.getAuthorSourceID());
+            }
             Log.v("Video-Scrape","Post-execute"+video.toCompactString());
             //supposedly never supposed to do this, but toast is handy
             if (!error.isEmpty()){
@@ -78,6 +82,7 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
                 }
                 System.out.println(videoDao.getVideos().size());
                 videoDatabase.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());
