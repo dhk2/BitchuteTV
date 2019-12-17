@@ -7,7 +7,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 
-@Database(entities = {Video.class}, version = 9, exportSchema = false)
+@Database(entities = {Video.class}, version =10, exportSchema = false)
 public abstract class VideoDatabase extends RoomDatabase {
     private static VideoDatabase INSTANCE;
 
@@ -20,6 +20,7 @@ public abstract class VideoDatabase extends RoomDatabase {
                             // allow queries on the main thread.
                             // Don't do this on a real app! See PersistenceBasicSample for an example.
                             .allowMainThreadQueries()
+                            .fallbackToDestructiveMigration()
                             .build();
         }
         return INSTANCE;

@@ -24,7 +24,7 @@ public class Bitchute {
                 Date pd = new Date();
                 nv.setHackDateString(r.getElementsByClass("video-card-published").first().text());
                 nv.setTitle(r.getElementsByClass("video-card-title").first().text());
-                nv.setAuthorID(-1l);
+               // nv.setAuthorID(-1l);
                 nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
                 nv.setViewCount(r.getElementsByClass(    "video-views").first().text());
                 //TODO calculate duration time into milliseconds  r.getElementsByClass("video-duration").first().text()
@@ -43,7 +43,7 @@ public class Bitchute {
             for (Element r : results) {
                 //  System.out.println("\n\n"+ r);
                 Video nv = new Video("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href"));
-                nv.setAuthorID(-1l);
+                //nv.setAuthorID(-1l);
                 nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
                 nv.setViewCount(r.getElementsByClass("video-views").first().text());
                 nv.setTitle(r.getElementsByClass("video-trending-title").first().text());

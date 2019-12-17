@@ -106,7 +106,7 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
             videoDao = videoDatabase.videoDao();
         }
         if (null != videoDao){
-            allVideos =(ArrayList)videoDao.getVideos();
+        //    allVideos =(ArrayList)videoDao.getVideos();
             Log.v("Channel-Update","loaded videos from database"+allVideos.size());
         }
         else {

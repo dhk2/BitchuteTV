@@ -14,13 +14,18 @@
 
 package anticlimacticteleservices.bitchutetv;
 
+import android.content.Context;
+import android.content.res.XmlResourceParser;
 import android.graphics.drawable.Drawable;
 
 import androidx.leanback.widget.ImageCardView;
 import androidx.leanback.widget.Presenter;
 import androidx.core.content.ContextCompat;
 
+import android.media.Image;
+import android.util.AttributeSet;
 import android.util.Log;
+import android.util.Xml;
 import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
@@ -61,12 +66,11 @@ public class CardPresenter extends Presenter {
          */
         mDefaultCardImage = ContextCompat.getDrawable(parent.getContext(), R.drawable.movie);
 
-        ImageCardView cardView =
-                new ImageCardView(parent.getContext()) {
+        ImageCardView cardView = new ImageCardView(parent.getContext()) {
                     @Override
-                    public void setSelected(boolean selected) {
+                   public void setSelected(boolean selected) {
                         updateCardBackgroundColor(this, selected);
-                        super.setSelected(selected);
+                                super.setSelected(selected);
                     }
                 };
 

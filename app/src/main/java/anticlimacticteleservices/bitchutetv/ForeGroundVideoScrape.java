@@ -16,6 +16,7 @@ import java.util.List;
 
 public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
     String error ="";
+    VideoRepository repository;
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -24,6 +25,7 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
         @Override
         protected void onPostExecute(Video video) {
             super.onPostExecute(video);
+            //TODO convert channel calls to livedata source
             Channel test = MainActivity.data.getChannelById(video.getSourceID());
             if (null == test || test.getThumbnail().isEmpty()){
                 new ForeGroundChannelScrape();
@@ -39,50 +41,47 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
         protected Video doInBackground(Video... videos) {
 
             Video nv = videos[0];
-            System.out.println("attempting to scrape"+nv.toCompactString());
+            ArrayList <Video> allVideos = repository.getDeadVideos();
+
+            System.out.println("attempting to scrape \n"+nv.toCompactString());
             try {
                 Document doc = Jsoup.connect(nv.getBitchuteUrl()).get();
                 //System.out.println(doc);
-                nv.setCategory(doc.getElementsByClass("video-detail-list").first().getElementsByTag("a").first().text());
-                nv.setDescription(doc.getElementsByClass("full hidden").toString());
-                nv.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
-                nv.setMp4(doc.getElementsByTag("source").attr("src"));
+                if (nv.getCategory().isEmpty()){
+                    nv.setCategory(doc.getElementsByClass("video-detail-list").first().getElementsByTag("a").first().text());
+                }
+                if (nv.getDescription().isEmpty()){
+                    nv.setDescription(doc.getElementsByClass("full hidden").toString());
+                }
+                if (nv.getMagnet().isEmpty()){
+                    nv.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
+                }
+                if (nv.getMp4().isEmpty()) {
+                    nv.setMp4(doc.getElementsByTag("source").attr("src"));
+                }
                 nv.setHackDateString(doc.getElementsByClass("Video-publish-date").first().text());
-                //MainActivity.data.updateVideo(nv);
                 ArrayList<Video> relatedcontent=Bitchute.getVideos(doc);
-
-                for (Video v : relatedcontent) {
-                    MainActivity.data.addVideo(v);
+     related:  for (Video v : relatedcontent) {
                     nv.addRelatedVideos(v.getSourceID());
+                    for (Video check : allVideos){
+                        if (check.getSourceID().equals(v.getSourceID())){
+                            continue related;
+                        }
+                    }
+                    repository.insert(v);
                 }
-                Elements channel = doc.getElementsByClass("channel-banner");
-                String c = channel.first().getElementsByAttribute("href").first().attr("href");
-                String g="";
-                for (String a :c.split("/")) {
-                    g=a;
+                if (nv.getAuthorID()<1) {
+                    Elements channel = doc.getElementsByClass("channel-banner");
+                    String c = channel.first().getElementsByAttribute("href").first().attr("href");
+                    String g = "";
+                    for (String a : c.split("/")) {
+                        g = a;
+                    }
+                    nv.setAuthorSourceID(g);
+                    nv.setAuthor((channel.first().getElementsByClass("name").text()));
                 }
-                nv.setAuthorSourceID(g);
-                nv.setAuthor((channel.first().getElementsByClass("name").text()));
-
-                VideoDao videoDao;
-                VideoDatabase videoDatabase;
-                videoDatabase = Room.databaseBuilder(MainActivity.data.getContext(), VideoDatabase.class, "mydb")
-                        .fallbackToDestructiveMigration()
-                        .build();
-                videoDao = videoDatabase.videoDao();
-                List test = videoDao.getVideosBySourceID(nv.getSourceID());
-                System.out.println(test.size());
-                if (test.size()==0) {
-                    videoDao.insert(nv);
-                    System.out.println("added video to database supposably");
-                }
-                else{
-                    videoDao.update(nv);
-                    System.out.println("updated video in database");
-                }
-                System.out.println(videoDao.getVideos().size());
-                videoDatabase.close();
-
+                System.out.println("preparing to udpate scraped video "+nv.toDebugString());
+                repository.update(nv);
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());
@@ -90,8 +89,6 @@ public class ForeGroundVideoScrape extends AsyncTask<Video,Video,Video> {
             } catch (NullPointerException e){
                 e.printStackTrace();
             }
-
             return nv;
         }
-
     }

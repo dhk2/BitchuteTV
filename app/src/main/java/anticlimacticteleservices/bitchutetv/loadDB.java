@@ -17,11 +17,13 @@ public class loadDB extends AsyncTask<Void,Void,Void> {
                 .fallbackToDestructiveMigration()
                 .build();
         videoDao = videoDatabase.videoDao();
+        /*
         List<Video> vdog = videoDao.getVideos();
         System.out.println("size of retireved allVideos videos "+vdog.size());
         ArrayList<Video> vcat = (ArrayList) vdog;
         System.out.println("calling from loaddb");
         MainActivity.data.setAllVideos(vcat);
+        */
         return null;
     }
 }

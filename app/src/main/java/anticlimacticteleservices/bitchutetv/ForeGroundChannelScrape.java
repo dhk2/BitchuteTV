@@ -29,15 +29,17 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
     protected Channel doInBackground(Channel... channels) {
 
         Channel nc = channels[0];
-        System.out.println("passed channel");
-        System.out.println(nc.toDebugString());
-        System.out.println("live data");
-        Channel screwed = MainActivity.data.getChannelById(nc.getSourceID());
-        if (screwed != null){
-            System.out.println(MainActivity.data.getChannelById(nc.getSourceID()).toDebugString());
+        Channel channelCheck = MainActivity.data.getChannelById(nc.getSourceID());
+        if (channelCheck != null){
+            if (channelCheck.getDescription().isEmpty()) {
+                System.out.println("scraping existing but unscraped channel " + channelCheck.toDebugString());
+            }
+            else {
+                System.out.println("rescraping previously scraped chnnel"+channelCheck.toDebugString());
+            }
         }
         else{
-            System.out.println("nothing in live data");
+            System.out.println("scraping brand new channel"+nc.toDebugString());
         }
         try {
             Document doc = Jsoup.connect(nc.getBitchuteUrl()).get();
@@ -49,6 +51,9 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
             nc.setThumbnailurl(nc.getThumbnail());
             if (nc.getDescription().isEmpty()){
                 nc.setDateHackString(nc.getDateHackString());
+                if (nc.getDescription().isEmpty()){
+                    nc.setDescription("(intentionally left blank)");
+                }
             }
             ChannelDao channelDao;
             ChannelDatabase channelDatabase;

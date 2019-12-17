@@ -1,5 +1,7 @@
 package anticlimacticteleservices.bitchutetv;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 
 import java.util.ArrayList;
@@ -9,16 +11,23 @@ public class MasterData {
     ArrayList <Channel> allChannels;
     ArrayList <Video> allVideos;
     Context context;
-    public MasterData (){
+    Activity activity;
+    Application application;
+    VideoRepository vr;
+
+    public MasterData (Application application, Context context){
         allVideos = new ArrayList<Video>();
         allChannels = new ArrayList<Channel>();
-    }
-    public MasterData (Context context){
-        allVideos = new ArrayList<Video>();
-        allChannels = new ArrayList<Channel>();
+        this.application = application;
         this.context = context;
+        vr = new VideoRepository(application);
+        //allVideos = (ArrayList)vr.getAllVideos();
+        System.out.println(" size of datg abase"+allVideos.size());
+        Video kludge = new Video ("https://www.bitchute.com/video/BieayMdvplc/");
+        vr.insert(kludge);
     }
     public Context getContext(){return this.context;}
+    public Application getApplication(){return this.application;}
     public ArrayList<Video> getFeed() {
         return allVideos;
     }
@@ -63,13 +72,17 @@ public class MasterData {
                 }
                 else {
                    // System.out.println("updating database");
+                    if (v.getID()>vid.getID()){
+                        vid.setID(v.getID());
+                    }
                     v=vid;
-
+                    vr.update(v);
                     return;
                 }
             }
         }
         allVideos.add(vid);
+        vr.insert(vid);
     }
     public void updateVideo(Video vid){
         if (vid.getMp4().isEmpty()){
@@ -78,7 +91,11 @@ public class MasterData {
         }
         for (Video v : allVideos){
             if (v.getSourceID().equals(vid.getSourceID())){
+                if (v.getID()>vid.getID()){
+                    vid.setID(v.getID());
+                }
                 v=vid;
+                vr.update(v);
             }
         }
     }
@@ -91,6 +108,7 @@ public class MasterData {
             for (Video v : allVideos) {
                 if (!(null==v)) {
                     if (g.equals(v.getSourceID())) {
+                        System.out.println("returning :"+v.toCompactString());
                         return v;
                     }
                 }
@@ -103,7 +121,7 @@ public class MasterData {
         for (Object item : videos){
             Video v= (Video) item;
             System.out.println("adding from db "+v.toCompactString());
-            addVideo((v));
+            addVideo(v);
         }
     }
     public void updateChannel(Channel chan) {
@@ -158,4 +176,8 @@ public class MasterData {
             addVideo(v);
         }
     }
+    public void refreshVideos(){
+     //   allVideos=(ArrayList)vr.getAllVideos();
+    }
+
 }

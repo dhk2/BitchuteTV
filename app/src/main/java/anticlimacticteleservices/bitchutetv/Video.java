@@ -305,23 +305,12 @@ class Video implements Serializable,Comparable<Video>
                 "author:" + author + "\n" +
                 "authorID:"+authorID +"\n" +
 //			"watched:" + watched.toString() + "\n" +
-                "uploaded:" + new Date(date).toString() + "\n" +
                 "hack date:"+hackDateString+"\n"+
-                "magnet link:" + magnet + "\n" +
                 "description:" + description + "\n" +
                 "mp4 file" + mp4 + "\n" +
-                "Rating:" + rating + "\n" +
                 "Views:" + viewCount + "\n" +
-                "Up votes:" + upCount + "\n" +
-                "Down votes:" + downCount + "\n" +
                 "sourceID:" + sourceID + "\n" +
-                "Comments:" + commentCount + "\n" +
                 "Hash tags:" + hashtags  + "\n" +
-                "Duration:" + duration +"\n"+
-                "local path:"+localPath+"\n"+
-                "errors:"+errors+"\n"+
-                "keep:"+keep+"\n"+
-                "last scrape:"+lastScrape+"\n"+
                 "Category:" + category+ "\n");
 
     }

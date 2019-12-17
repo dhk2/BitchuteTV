@@ -17,10 +17,12 @@ package anticlimacticteleservices.bitchutetv;
 import android.app.Activity;
 import android.os.Bundle;
 
+import androidx.fragment.app.FragmentActivity;
+
 /*
  * Details activity class that loads LeanbackDetailsFragment class
  */
-public class ChannelDetailsActivity extends Activity {
+public class ChannelDetailsActivity extends FragmentActivity {
     public static final String SHARED_ELEMENT_NAME = "hero";
     public static final String CHANNEL = "Channel";
 

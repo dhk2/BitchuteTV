@@ -22,6 +22,8 @@ import android.os.Bundle;
 
 import androidx.leanback.app.DetailsFragment;
 import androidx.leanback.app.DetailsFragmentBackgroundController;
+import androidx.leanback.app.DetailsSupportFragment;
+import androidx.leanback.app.DetailsSupportFragmentBackgroundController;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.ClassPresenterSelector;
@@ -39,6 +41,8 @@ import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.Handler;
 import android.util.Log;
@@ -61,7 +65,8 @@ import java.util.List;
  * LeanbackDetailsFragment extends DetailsFragment, a Wrapper fragment for leanback details screens.
  * It shows a detailed view of video and its meta plus related videos.
  */
-public class VideoDetailsFragment extends DetailsFragment {
+public class VideoDetailsFragment extends DetailsSupportFragment {
+
     private static final String TAG = "VideoDetailsFragment";
 
     private static final int ACTION_WATCH = 1;
@@ -77,14 +82,37 @@ public class VideoDetailsFragment extends DetailsFragment {
     private ClassPresenterSelector mPresenterSelector;
     private Object mSelectedItem;
     private Channel mSelectedChannel;
-    private DetailsFragmentBackgroundController mDetailsBackground;
+    private DetailsSupportFragmentBackgroundController mDetailsBackground;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
         setOnItemViewClickedListener(new VideoDetailsFragment.ItemViewClickedListener());
-        mDetailsBackground = new DetailsFragmentBackgroundController(this);
+        VideoViewModel vvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
+        vvm.getAllVideos().observe(this, new Observer<List<Video>>(){
+            @Override
+            public void onChanged(List<Video> videos) {
+                System.out.println("something changed in teh data");
+                if (mSelectedVideo != null){
+                    System.out.println("something changed, currently displaying "+mSelectedVideo.toDebugString());
+                    for (Video v :  videos){
+                        if (v.getSourceID().equals(mSelectedVideo.getSourceID())){
+                            System.out.println("this is the latest version "+v.toDebugString());
+                            mSelectedVideo=v;
+                            mAdapter.clear();
+                            setupDetailsOverviewRow();
+                            setupDetailsOverviewRowPresenter();
+                            setAdapter(mAdapter);
+                            initializeBackground(mSelectedVideo);
+                            setupRelatedMovieListRow();
+                        }
+                    }
+                }
+            }
+        });
+
+        mDetailsBackground = new DetailsSupportFragmentBackgroundController(this);
         //looks ugly
         mSelectedItem = getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
         if (mSelectedItem instanceof Video){
@@ -114,6 +142,7 @@ public class VideoDetailsFragment extends DetailsFragment {
                     public void run() {
                         if (true) {
                             Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
+                            System.out.println("current version of video"+updatedVideo.toCompactString());
                             if (null == updatedVideo || updatedVideo.getMp4().isEmpty()) {
                             } else {
                                 mSelectedVideo = updatedVideo;
@@ -333,7 +362,16 @@ public class VideoDetailsFragment extends DetailsFragment {
 
                     }
                 }
+                if (action.getId() == ACTION_SUBSCRIBE){
 
+                    for (Video fuck:MainActivity.data.getAllVideos()){
+                        System.out.println(fuck.toDebugString());
+                    }
+                    MainActivity.data.refreshVideos();
+                    for (Video fuck:MainActivity.data.getAllVideos()) {
+                        System.out.println(fuck.toDebugString());
+                    }
+                }
                 if (action.getId() == ACTION_WATCH) {
                     if (mSelectedVideo.getMp4().isEmpty()){
                         Video updated = MainActivity.data.getVideo(mSelectedVideo.getSourceID());

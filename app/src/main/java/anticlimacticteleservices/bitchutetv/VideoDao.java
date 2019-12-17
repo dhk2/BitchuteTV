@@ -1,5 +1,6 @@
 package anticlimacticteleservices.bitchutetv;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -20,18 +21,18 @@ public interface VideoDao {
 
 
     @Query("SELECT * FROM feed_item ORDER BY date DESC")
-    List<Video> getVideos();
+    LiveData<List<Video>> getVideos();
 
     @Query("SELECT * FROM feed_item WHERE ID = :id")
-    public Video getvideoById(Long id);
+    LiveData<Video> getvideoById(Long id);
 
-    @Query("SELECT * FROM feed_item WHERE author_id = :id")
+    @Query("SELECT * FROM feed_item WHERE author_id = :id ORDER BY date DESC")
     List<Video> getVideosByAuthorId(Long id);
 
     @Query("SELECT COUNT(*) from feed_item")
     int countVideos();
 
-    @Query("Select * FROM feed_item WHERE source_id = :sid")
+    @Query("Select * FROM feed_item WHERE source_id = :sid ORDER BY date DESC")
     List<Video> getVideosBySourceID(String sid);
 
     @Insert
@@ -43,7 +44,8 @@ public interface VideoDao {
     @Query("SELECT * FROM feed_item WHERE watched=0 ORDER BY date DESC")
     List<Video> getUnWatchedVideos();
 
-
+    @Query("SELECT * FROM feed_item ORDER BY date DESC")
+    List<Video> getDeadVideos();
 
 
 }

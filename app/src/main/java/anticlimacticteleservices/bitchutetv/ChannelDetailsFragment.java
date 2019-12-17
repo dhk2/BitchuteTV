@@ -22,6 +22,8 @@ import android.os.Bundle;
 
 import androidx.leanback.app.DetailsFragment;
 import androidx.leanback.app.DetailsFragmentBackgroundController;
+import androidx.leanback.app.DetailsSupportFragment;
+import androidx.leanback.app.DetailsSupportFragmentBackgroundController;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.ClassPresenterSelector;
@@ -63,7 +65,7 @@ import java.util.List;
  * LeanbackDetailsFragment extends DetailsFragment, a Wrapper fragment for leanback details screens.
  * It shows a detailed view of video and its meta plus related videos.
  */
-public class ChannelDetailsFragment extends DetailsFragment {
+public class ChannelDetailsFragment extends DetailsSupportFragment {
     private static final String TAG = "ChannelDetailsFragment";
 
     private static final int ACTION_WATCH_TRAILER = 1;
@@ -79,14 +81,14 @@ public class ChannelDetailsFragment extends DetailsFragment {
     private ClassPresenterSelector mPresenterSelector;
     private Object mSelectedItem;
     private Channel mSelectedChannel;
-    private DetailsFragmentBackgroundController mDetailsBackground;
+    private DetailsSupportFragmentBackgroundController mDetailsBackground;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
         setOnItemViewClickedListener(new ChannelDetailsFragment.ItemViewClickedListener());
-        mDetailsBackground = new DetailsFragmentBackgroundController(this);
+        mDetailsBackground = new DetailsSupportFragmentBackgroundController(this);
         //looks ugly
         mSelectedItem = getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
         if (mSelectedItem instanceof Video){
