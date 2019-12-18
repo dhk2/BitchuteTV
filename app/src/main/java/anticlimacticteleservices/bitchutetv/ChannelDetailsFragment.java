@@ -370,7 +370,7 @@ public class ChannelDetailsFragment extends DetailsSupportFragment {
                     Channel targetChannel=MainActivity.data.getChannelById(mSelectedVideo.getAuthorSourceID());
                     if (null == targetChannel){
                         System.out.println("no channel found, nex scrape launched");
-                        targetChannel=new Channel("www.bitchute.com/channel/"+mSelectedVideo.getAuthorSourceID());
+                        targetChannel=new Channel("http://www.bitchute.com/channel/"+mSelectedVideo.getAuthorSourceID());
                         new ForeGroundChannelScrape().execute(targetChannel);
                         Toast.makeText(getActivity(), "channel data missing, try again momentarily", Toast.LENGTH_SHORT).show();
                     }
@@ -487,16 +487,6 @@ public class ChannelDetailsFragment extends DetailsSupportFragment {
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
             if (item instanceof Video) {
                 Video video = (Video) item;
-                Log.d(TAG, "Item: " + item.toString());
-                if (video.getMp4().isEmpty()) {
-                    Video v = MainActivity.data.getVideo(video.getSourceID());
-                    if (null == v || v.getMp4().isEmpty()) {
-                        ForeGroundVideoScrape task = new ForeGroundVideoScrape();
-                        task.execute((Video) item);
-                    } else {
-                        video = v;
-                    }
-                }
                 System.out.println("meaning to launch" + video.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(DetailsActivity.VIDEO, video);
