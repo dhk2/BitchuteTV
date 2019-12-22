@@ -19,13 +19,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 
-import androidx.fragment.app.Fragment;
 import androidx.leanback.app.BackgroundManager;
-import androidx.leanback.app.BrowseFragment;
 import androidx.leanback.app.BrowseSupportFragment;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.HeaderItem;
@@ -41,7 +38,6 @@ import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -59,17 +55,8 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -94,40 +81,101 @@ public class MainFragment extends BrowseSupportFragment {
     private List subscriptions;
     private List history ;
     private List favorites;
-    private List all;
+    private List allVideos;
+    private boolean upToDate=false;
+    private boolean rowsSetup=false;
+    private VideoViewModel vvm;
+    private ChannelViewModel cvm;
+    private ArrayList <Channel> allChannels;
+    private ArrayList <Channel> suggested;
+    private boolean debug;
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        VideoViewModel vvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()  ).create(VideoViewModel.class);
-        System.out.println(("view model attached successfully"));
-        vvm.getAllVideos().observe(this, new Observer<List<Video>>(){
+        debug=true;
+        popular = new ArrayList<WebVideo>();
+        trending = new ArrayList<WebVideo>();
+        subscriptions = new ArrayList<WebVideo>();
+        history= new ArrayList<WebVideo>();
+        favorites = new ArrayList<WebVideo>();
+        suggested = new ArrayList<Channel>();
+        vvm =   ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
+        cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
+
+        if (debug) System.out.println(("view model attached successfully"));
+        vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
-            public void onChanged(List<Video> videos) {
-                System.out.println("something changed in the data "+videos.size());
-                all =videos;
-                popular = new ArrayList<Video>();
-                trending = new ArrayList<Video>();
-                subscriptions = new ArrayList<Video>();
-                history= new ArrayList<Video>();
-                favorites = new ArrayList<Video>();
-                for (Video v: videos){
+            public void onChanged(List<WebVideo> webVideos) {
+                if (debug)System.out.println("something changed in the data "+ webVideos.size());
+                allVideos = webVideos;
+                popular = new ArrayList<WebVideo>();
+                trending = new ArrayList<WebVideo>();
+                subscriptions = new ArrayList<WebVideo>();
+                history= new ArrayList<WebVideo>();
+                favorites = new ArrayList<WebVideo>();
+                for (WebVideo v: webVideos){
                     if (v.getCategory().equals("popular")) {popular.add(v);}
                     if (v.getCategory().equals("trending")) {trending.add(v);}
                     if (v.isWatched()) {history.add(v);}
                 }
+                Collections.sort(popular);
+                if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
+                if (!rowsSetup){
+                    loadRows();
+                    rowsSetup=true;
+                    upToDate=true;
+                }
+                else {
+                    upToDate=false;
+                }
             }
         });
-        System.out.println(("view model observer attached successfully"));
 
+        cvm.getAllChannels().observe(this, new Observer<List<Channel>>(){
+            @Override
+            public void onChanged(List<Channel> channels) {
+                if (debug) System.out.println("something changed in the channel data "+channels.size());
+                allChannels = (ArrayList)channels;
+
+                suggested = new ArrayList<Channel>();
+                for (Channel c:allChannels){
+                    if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
+                }
+            }
+        });
+        allChannels=(ArrayList)cvm.getDeadChannels();
+        allVideos=(ArrayList)vvm.getDeadVideos();
+        popular = new ArrayList<WebVideo>();
+        trending = new ArrayList<WebVideo>();
+        subscriptions = new ArrayList<WebVideo>();
+        history= new ArrayList<WebVideo>();
+        favorites = new ArrayList<WebVideo>();
+        for (WebVideo v: (ArrayList<WebVideo>) allVideos){
+            if (v.getCategory().equals("popular")) {popular.add(v);}
+            if (v.getCategory().equals("trending")) {trending.add(v);}
+            if (v.isWatched()) {history.add(v);}
+        }
+        System.out.println(popular.size()+" popular videos "+trending.size()+"trending, of total "+allVideos.size());
         super.onActivityCreated(savedInstanceState);
-
+        new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         prepareBackgroundManager();
 
         setupUIElements();
 
-        new BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         setupEventListeners();
+
         loadRows();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //TODO make this work without losing place in row on reload
+        if (rowsSetup && !upToDate){
+         loadRows();
+         rowsSetup=true;
+         upToDate=true;
+       }
     }
 
     @Override
@@ -143,7 +191,7 @@ public class MainFragment extends BrowseSupportFragment {
         ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
         ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-        if (popular == null){
+        if (allVideos == null  || allVideos.size()<1){
             return;
         }
         if (popular.size()>0) {
@@ -152,7 +200,7 @@ public class MainFragment extends BrowseSupportFragment {
             }
             HeaderItem header = new HeaderItem(0, "Popular");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
-            rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            //rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
@@ -162,7 +210,7 @@ public class MainFragment extends BrowseSupportFragment {
             }
             HeaderItem header = new HeaderItem(0, "Trending");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
-            rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+           // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
@@ -172,32 +220,30 @@ public class MainFragment extends BrowseSupportFragment {
             }
             HeaderItem header = new HeaderItem(0, "History");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
-            rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+           // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-        if (all.size()>0) {
-            for (Object v : all) {
+
+        if (allVideos.size()>0) {
+            for (Object v : allVideos) {
                 listRowAdapter.add(v);
             }
             HeaderItem header = new HeaderItem(0, "All");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
-            rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+          //  rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-
-    /*
-        List <Channel> cList = MainActivity.data.getAllChannels();
-        listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-        for (int j = 0; j < cList.size(); j++) {
-            listRowAdapter.add(cList.get(j));
+        if (suggested.size()>0) {
+            for (int j = 0; j < suggested.size(); j++) {
+                listRowAdapter.add(suggested.get(j));
+            }
+            HeaderItem header = new HeaderItem(3, "Suggested Channels");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-        header = new HeaderItem(3,"Suggested Channels");
-        rowsAdapter.add(new ListRow(header,listRowAdapter));
-
-
-     */
         HeaderItem gridHeader = new HeaderItem(4, "PREFERENCES");
         GridItemPresenter mGridPresenter = new GridItemPresenter();
         ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
@@ -272,21 +318,13 @@ public class MainFragment extends BrowseSupportFragment {
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
-            if (item instanceof Video) {
-                Video video = (Video) item;
+            System.out.println(row.toString()+"><"+rowViewHolder.toString());
+            if (item instanceof WebVideo) {
+                WebVideo webVideo = (WebVideo) item;
                 Log.d(TAG, "Item: " + item.toString());
-                if (video.getMp4().isEmpty()) {
-                    Video v = MainActivity.data.getVideo(video.getSourceID());
-                    if (null == v || v.getMp4().isEmpty()) {
-                        ForeGroundVideoScrape task = new ForeGroundVideoScrape();
-                        task.execute((Video) item);
-                    } else {
-                        video = v;
-                    }
-                }
-                System.out.println("meaning to launch" + video.toCompactString());
+                System.out.println("meaning to launch" + webVideo.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                intent.putExtra(DetailsActivity.VIDEO, video);
+                intent.putExtra(DetailsActivity.VIDEO, webVideo);
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         getActivity(),
                         ((ImageCardView) itemViewHolder.view).getMainImageView(),
@@ -308,9 +346,11 @@ public class MainFragment extends BrowseSupportFragment {
                     dialog.show();
                 }
                 if (item.equals("Refresh")) {
-                    //    new BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
-                    item = "no";
+                    System.out.println("refreshed "+allVideos.size()+" "+allChannels.size());
+                    loadRows();
                 }
+                item = "no";
+
                 if (((String) item).contains(getString(R.string.error_fragment))) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
@@ -343,8 +383,8 @@ public class MainFragment extends BrowseSupportFragment {
                 Object item,
                 RowPresenter.ViewHolder rowViewHolder,
                 Row row) {
-            if (item instanceof Video) {
-                mBackgroundUri = ((Video) item).getThumbnailurl();
+            if (item instanceof WebVideo) {
+                mBackgroundUri = ((WebVideo) item).getThumbnailurl();
                 startBackgroundTimer();
             }
             if (item instanceof String){

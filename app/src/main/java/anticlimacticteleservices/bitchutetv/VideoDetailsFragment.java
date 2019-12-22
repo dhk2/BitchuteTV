@@ -18,10 +18,9 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.leanback.app.DetailsFragment;
-import androidx.leanback.app.DetailsFragmentBackgroundController;
 import androidx.leanback.app.DetailsSupportFragment;
 import androidx.leanback.app.DetailsSupportFragmentBackgroundController;
 import androidx.leanback.widget.Action;
@@ -57,6 +56,7 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,101 +76,104 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
     private static final int DETAIL_THUMB_HEIGHT = 274;
     private static final int NUM_COLS = 20;
 
-    private Video mSelectedVideo;
+    private WebVideo mSelectedWebVideo;
     private Handler mHandler = new Handler();
     private ArrayObjectAdapter mAdapter;
     private ClassPresenterSelector mPresenterSelector;
     private Object mSelectedItem;
     private Channel mSelectedChannel;
     private DetailsSupportFragmentBackgroundController mDetailsBackground;
-
+    private String mp4;
+    private boolean waitingForUpdate;
+    VideoViewModel vvm;
+    ChannelViewModel cvm;
+//    ChannelRepository repository;
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate DetailsFragment");
+        waitingForUpdate=false;
         setOnItemViewClickedListener(new VideoDetailsFragment.ItemViewClickedListener());
-        VideoViewModel vvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
-        vvm.getAllVideos().observe(this, new Observer<List<Video>>(){
+        vvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
+        cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
+        vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
-            public void onChanged(List<Video> videos) {
+            public void onChanged(List<WebVideo> webVideos) {
                 System.out.println("something changed in teh data");
-                if (mSelectedVideo != null){
-                    System.out.println("something changed, currently displaying "+mSelectedVideo.toDebugString());
-                    for (Video v :  videos){
-                        if (v.getSourceID().equals(mSelectedVideo.getSourceID())){
-                            System.out.println("this is the latest version "+v.toDebugString());
-                            mSelectedVideo=v;
-                            mAdapter.clear();
-                            setupDetailsOverviewRow();
-                            setupDetailsOverviewRowPresenter();
-                            setAdapter(mAdapter);
-                            initializeBackground(mSelectedVideo);
-                            setupRelatedMovieListRow();
+                if (mSelectedWebVideo != null){
+                    System.out.println("something changed, currently displaying "+ mSelectedWebVideo.toCompactString());
+                    System.out.println("waiting for update:"+waitingForUpdate);
+                    if (waitingForUpdate){
+                        for (WebVideo v : webVideos){
+                            if (v.getSourceID().equals(mSelectedWebVideo.getSourceID())) {
+                                if (!mSelectedWebVideo.getMp4().isEmpty() && !v.getMp4().isEmpty()) {
+
+                                    mSelectedWebVideo = v;
+                                    mAdapter.clear();
+                                    setupDetailsOverviewRow();
+                                    setupDetailsOverviewRowPresenter();
+                                    setAdapter(mAdapter);
+                                    initializeBackground(mSelectedWebVideo);
+                                    setupRelatedMovieListRow();
+                                    waitingForUpdate=false;
+                                }
+                                else {
+                                    System.out.println("not updating display view because we still dont have a n mp4");
+                                }
+                            }
                         }
                     }
                 }
             }
         });
-
+        System.out.println(("vvm completed"));
         mDetailsBackground = new DetailsSupportFragmentBackgroundController(this);
         //looks ugly
+        System.out.println("set backgrojnd controller");
         mSelectedItem = getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
-        if (mSelectedItem instanceof Video){
+        if (mSelectedItem instanceof WebVideo){
             System.out.println("it's a video");
-            mSelectedVideo= (Video) mSelectedItem;
+            mSelectedWebVideo = (WebVideo) mSelectedItem;
         }
         if (mSelectedItem instanceof Channel){
             System.out.println("it's a channel");
             mSelectedChannel = (Channel) mSelectedItem;
         }
-        if (mSelectedVideo != null) {
+        if (mSelectedWebVideo != null) {
             System.out.println("processing video");
-            if (!mSelectedVideo.getAuthorSourceID().isEmpty()) {
-                Channel chan = MainActivity.data.getChannelById(mSelectedVideo.getSourceID());
+
+            if (!mSelectedWebVideo.getAuthorSourceID().isEmpty()) {
+                //
+                Channel chan=null;
+                for (Channel c :cvm.getDeadChannels()){
+                    if (c.getSourceID().equals(mSelectedWebVideo.getAuthorSourceID())){
+                        chan = c;
+                        if (c.getDescription().isEmpty()){
+                            new ForeGroundChannelScrape().execute(c);
+                        }
+                    }
+                }
                 if (chan == null) {
-                    chan = new Channel("http://www.bitchute.com/channel/" + mSelectedVideo.getAuthorSourceID());
+                    chan = new Channel("http://www.bitchute.com/channel/" + mSelectedWebVideo.getAuthorSourceID());
                 }
                 if (chan.getDescription().isEmpty()){
                     new ForeGroundChannelScrape().execute(chan);
                 }
             }
+
             mPresenterSelector = new ClassPresenterSelector();
             mAdapter = new ArrayObjectAdapter(mPresenterSelector);
-            Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-            if (null == updatedVideo || updatedVideo.getMp4().isEmpty()){
-                mHandler.postDelayed(new Runnable() {
-                    public void run() {
-                        if (true) {
-                            Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-                            System.out.println("current version of video"+updatedVideo.toCompactString());
-                            if (null == updatedVideo || updatedVideo.getMp4().isEmpty()) {
-                            } else {
-                                mSelectedVideo = updatedVideo;
-                                mAdapter.clear();
-                                setupDetailsOverviewRow();
-                                setupDetailsOverviewRowPresenter();
-                                setAdapter(mAdapter);
-                                initializeBackground(mSelectedVideo);
-                                setupRelatedMovieListRow();
-                            }
-                        }
-                    }
-                }, 5000);
-            }
-            else {
-                if (updatedVideo.getMp4().isEmpty()){
-                    System.out.println("video exists but mp4 is still not set");
-                }
-                else {
-                    mSelectedVideo = updatedVideo;
-                }
+            if (mSelectedWebVideo.getMp4().isEmpty()){
+                ForeGroundVideoScrape task = new ForeGroundVideoScrape();
+                task.execute(mSelectedWebVideo);
+                waitingForUpdate=true;
             }
             setupDetailsOverviewRow();
             setupDetailsOverviewRowPresenter();
             setAdapter(mAdapter);
-            initializeBackground(mSelectedVideo);
+            initializeBackground(mSelectedWebVideo);
             setupRelatedMovieListRow();
-           // System.out.println(mSelectedVideo.toCompactString());
+           // System.out.println(mSelectedWebVideo.toCompactString());
         }
         else if(mSelectedChannel != null){
             mPresenterSelector = new ClassPresenterSelector();
@@ -183,25 +186,10 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
            // System.out.println(mSelectedChannel.toCompactString());
 
             if (mSelectedChannel.getDescription().isEmpty()) {
-                System.out.println("channel is missing data, waiting 5 seconds "+mSelectedChannel);
-                mHandler.postDelayed(new Runnable() {
-                    public void run() {
-                        System.out.println("checking for channel description again");
-                        Channel updatedChannel = MainActivity.data.getChannelById(mSelectedChannel.getSourceID());
-                        if (null == updatedChannel || updatedChannel.getDescription().isEmpty()) {
-                            System.out.println("Channel not in database after additional pause");
-                            return;
-                        } else {
-                            mSelectedChannel = updatedChannel;
-                            mAdapter.clear();
-                            setupDetailsOverviewRow();
-                            setupDetailsOverviewRowPresenter();
-                            setAdapter(mAdapter);
-                            initializeBackground(mSelectedChannel);
-                            setupRelatedMovieListRow();
-                        }
-                    }
-                }, 5000);
+                System.out.println("channel is missing data "+mSelectedChannel);
+                ForeGroundChannelScrape task = new ForeGroundChannelScrape();
+                task.execute(mSelectedChannel);
+                waitingForUpdate=true;
             }
         }
         else {
@@ -210,7 +198,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         }
     }
 
-    private void initializeBackground(Video data) {
+    private void initializeBackground(WebVideo data) {
         mDetailsBackground.enableParallax();
         Glide.with(getActivity())
                 .load(data.getThumbnailurl())
@@ -251,9 +239,9 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             System.out.println("ghost context");
             return;}
         String thumbnail="";
-        if (null !=mSelectedVideo) {
-            row = new DetailsOverviewRow(mSelectedVideo);
-            thumbnail=mSelectedVideo.getThumbnail();
+        if (null != mSelectedWebVideo) {
+            row = new DetailsOverviewRow(mSelectedWebVideo);
+            thumbnail= mSelectedWebVideo.getThumbnail();
         }
         else if (null !=mSelectedChannel){
             row = new DetailsOverviewRow(mSelectedChannel);
@@ -283,12 +271,12 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 }
             });
         ArrayObjectAdapter actionAdapter = new ArrayObjectAdapter();
-        if (mSelectedVideo!=null && !mSelectedVideo.getMp4().isEmpty()) {
+        if (mSelectedWebVideo !=null && !mSelectedWebVideo.getMp4().isEmpty()) {
             actionAdapter.add(
                                 new Action(
                                         ACTION_WATCH,
                                         getResources().getString(R.string.watch_trailer_1)));
-            if (!mSelectedVideo.getAuthorSourceID().isEmpty()){
+            if (!mSelectedWebVideo.getAuthorSourceID().isEmpty()){
                 actionAdapter.add(
                     new Action (
                                 ACTION_GOTO_CHANNEL,
@@ -296,10 +284,17 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             }
         }
         if (mSelectedChannel !=null) {
+            String command;
+            if (mSelectedChannel.isSubscribed()) {
+                command = "UnSubscribe";
+            }
+            else {
+                command="Subscribe";
+            }
             actionAdapter.add(
                     new Action(
                             ACTION_SUBSCRIBE,
-                            getResources().getString(R.string.subscribe_1)));
+                            command));
         }
         row.setActionsAdapter(actionAdapter);
         mAdapter.add(row);
@@ -324,71 +319,20 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             @Override
             public void onActionClicked(Action action) {
                 System.out.println("something clicked on vdf dp.soacl");
-                if (null != mSelectedVideo) {
-                    Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-                    //System.out.println("updated video returned " + updatedVideo.toCompactString());
-                    if (null == updatedVideo) {
-                        System.out.println("Video not in database");
-                    } else {
-                        if (updatedVideo.getMp4().isEmpty()) {
-                            System.out.println("video exists but mp4 is still not set");
-                            mHandler.postDelayed(new Runnable() {
-                                public void run() {
-                                   // System.out.println("checking for mp4 again");
-                                    Video updatedVideo = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-                                    if (null == updatedVideo || updatedVideo.getMp4().isEmpty()) {
-                                        System.out.println("Video not in database after additional pause");
-                                    } else {
-                                        mSelectedVideo = updatedVideo;
-                                        mAdapter.clear();
-                                        setupDetailsOverviewRow();
-                                        setupDetailsOverviewRowPresenter();
-                                        setAdapter(mAdapter);
-                                        initializeBackground(mSelectedVideo);
-                                        setupRelatedMovieListRow();
-                                    }
-                                }
-                            }, 2000);
-                            Toast.makeText(getActivity(), "Fetching video information", Toast.LENGTH_SHORT);
-                        } else {
-                            mSelectedVideo = updatedVideo;
-                            mAdapter.clear();
-                            setupDetailsOverviewRow();
-                            setupDetailsOverviewRowPresenter();
-                            setAdapter(mAdapter);
-                            initializeBackground(mSelectedVideo);
-                            setupRelatedMovieListRow();
-                        }
 
-                    }
-                }
                 if (action.getId() == ACTION_SUBSCRIBE){
-
-                    for (Video fuck:MainActivity.data.getAllVideos()){
-                        System.out.println(fuck.toDebugString());
+                    if (mSelectedChannel.isSubscribed()){
+                        mSelectedChannel.setSubscribed(false);
                     }
-                    MainActivity.data.refreshVideos();
-                    for (Video fuck:MainActivity.data.getAllVideos()) {
-                        System.out.println(fuck.toDebugString());
+                    else{
+                        mSelectedChannel.setSubscribed(true);
                     }
+                    cvm.update(mSelectedChannel);
                 }
                 if (action.getId() == ACTION_WATCH) {
-                    if (mSelectedVideo.getMp4().isEmpty()){
-                        Video updated = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-                        if (null == updated) {
-                            System.out.println("video not found in database " + mSelectedVideo.toCompactString());
-                        } else {
-                            if (updated.getMp4().isEmpty()) {
-                                System.out.println("still not updated with Mp4 value");
-                            }
-                            else {
-                                mSelectedVideo=updated;
-                            }
-                        }
-                    }
-                    if (!mSelectedVideo.getMp4().isEmpty()) {
+                    if (!mSelectedWebVideo.getMp4().isEmpty()) {
                         Intent intent = new Intent(getActivity(), PlaybackActivity.class);
-                        intent.putExtra(DetailsActivity.VIDEO, mSelectedVideo);
+                        intent.putExtra(DetailsActivity.VIDEO, mSelectedWebVideo);
                         startActivity(intent);
                     }
                     else {
@@ -396,22 +340,28 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                     }
                 }
                 if (action.getId() == ACTION_GOTO_CHANNEL){
-                    System.out.println("attemtping to go to channel for video "+mSelectedVideo.toCompactString());
-                    Channel targetChannel=MainActivity.data.getChannelById(mSelectedVideo.getAuthorSourceID());
-                    if (null == targetChannel){
+                    Channel targetChannel=null;
+                    for (Channel c : cvm.getDeadChannels()){
+                        System.out.println(mSelectedWebVideo.getAuthorSourceID()+" = "+c.getSourceID());
+                        if (c.getSourceID().equals(mSelectedWebVideo.getAuthorSourceID())){
+                            targetChannel = c;
+                            System.out.println("found channel "+targetChannel.toDebugString());
+                        }
+                    }
+                    if (null == targetChannel || targetChannel.getDescription().isEmpty()){
                         System.out.println("no channel found, nex scrape launched");
-                        targetChannel=new Channel("www.bitchute.com/channel/"+mSelectedVideo.getAuthorSourceID());
+                        targetChannel=new Channel("http://www.bitchute.com/channel/"+ mSelectedWebVideo.getAuthorSourceID());
                         new ForeGroundChannelScrape().execute(targetChannel);
                         Toast.makeText(getActivity(), "channel data missing, try again momentarily", Toast.LENGTH_SHORT).show();
+                        waitingForUpdate=true;
+                        return;
                     }
                     System.out.println("channel should be "+targetChannel
 
                     );
-                    if (!targetChannel.getThumbnail().isEmpty()) {
-                        Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                        intent.putExtra(DetailsActivity.VIDEO, targetChannel);
-                        startActivity(intent);
-                    }
+                    Intent intent = new Intent(getActivity(), DetailsActivity.class);
+                    intent.putExtra(DetailsActivity.VIDEO, targetChannel);
+                    startActivity(intent);
                 }
 
             }
@@ -421,12 +371,24 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
 
     public void setupRelatedMovieListRow() {
         String subcategories[] = {getString(R.string.related_movies)};
-        List<Video> list = new ArrayList<>();
-        if (mSelectedVideo != null){
-            for (String g: mSelectedVideo.getRelatedVideoArray()){
-                Video candidate = MainActivity.data.getVideo(g);
+        List<WebVideo> list = new ArrayList<>();
+        WebVideo candidate;
+        if (mSelectedWebVideo != null){
+            for (String g: mSelectedWebVideo.getRelatedVideoArray()){
+                System.out.println("setting up related video row for "+ mSelectedWebVideo.getRelatedVideoArray().size());
+                candidate = null;
+                for (WebVideo v: vvm.getDeadVideos()){
+                    if (v.getSourceID().equals(g)){
+                        candidate = v;
+                    }
+                }
                 if (null == candidate) {
-                    list.add(new Video("https://www.bitchute.com/" + g));
+
+                    System.out.println("failed to find existing copy of video for "+g);
+                    WebVideo newRelated = (new WebVideo("https://www.bitchute.com/video/" + g));
+                    list.add(newRelated);
+
+                    //new ForeGroundVideoScrape().execute(newRelated);
                 }
                 else {
                     list.add(candidate);
@@ -434,7 +396,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             }
         }
         if (mSelectedChannel !=null){
-            for (Video v :MainActivity.data.getAllVideos()){
+            for (WebVideo v : vvm.getDeadVideos()){
                 if (v.getAuthorSourceID().equals(mSelectedChannel.getSourceID())){
                     list.add(v);
                 }
@@ -474,33 +436,11 @@ return true;
             RowPresenter.ViewHolder rowViewHolder,
             Row row) {
         System.out.println("something clicked in vdf oic");
-        Video updated = MainActivity.data.getVideo(mSelectedVideo.getSourceID());
-        if (null == updated) {
-            System.out.println("video not found in database " + mSelectedVideo.toCompactString());
-        } else {
-            if (updated.getMp4().isEmpty()) {
-                System.out.println("still not updated with Mp4 value");
-            }
-            else {
-                mSelectedVideo=updated;
-            }
-        }
-        if (item instanceof Video) {
+        if (item instanceof WebVideo) {
             Log.d(TAG, "Item: " + item.toString());
-            Video video = (Video) item;
-            updated = MainActivity.data.getVideo(video.getSourceID());
-            if (null == updated) {
-                System.out.println("video not found in database " + video.toCompactString());
-            } else {
-                if (updated.getMp4().isEmpty()) {
-                    System.out.println("still not updated with Mp4 value");
-                }
-                else {
-                    video=updated;
-                }
-            }
+            WebVideo webVideo = (WebVideo) item;
             Intent intent = new Intent(getActivity(), DetailsActivity.class);
-            intent.putExtra(getResources().getString(R.string.movie), video);
+            intent.putExtra(getResources().getString(R.string.movie), webVideo);
 
             Bundle bundle =
                     ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -515,21 +455,17 @@ return true;
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
-            if (item instanceof Video) {
-                Video video = (Video) item;
+            if (item instanceof WebVideo) {
+                WebVideo webVideo = (WebVideo) item;
                 Log.d(TAG, "Item: " + item.toString());
-                if (video.getMp4().isEmpty()) {
-                    Video v = MainActivity.data.getVideo(video.getSourceID());
-                    if (null == v || v.getMp4().isEmpty()) {
-                        ForeGroundVideoScrape task = new ForeGroundVideoScrape();
-                        task.execute((Video) item);
-                    } else {
-                        video = v;
-                    }
+                if (webVideo.getMp4().isEmpty()) {
+                    ForeGroundVideoScrape task = new ForeGroundVideoScrape();
+                    task.execute((WebVideo) item);
+                    waitingForUpdate=true;
                 }
-                System.out.println("meaning to launch" + video.toCompactString());
+                System.out.println("meaning to launch" + webVideo.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
-                intent.putExtra(DetailsActivity.VIDEO, video);
+                intent.putExtra(DetailsActivity.VIDEO, webVideo);
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         getActivity(),
                         ((ImageCardView) itemViewHolder.view).getMainImageView(),
@@ -568,6 +504,7 @@ return true;
                 if (channel.getDescription().isEmpty()) {
                     ForeGroundChannelScrape task = new ForeGroundChannelScrape();
                     task.execute((Channel) item);
+                    waitingForUpdate=true;
                     Toast.makeText(getActivity(), "waiting on channel data, try again in a moment", Toast.LENGTH_SHORT).show();
                 }
                 else {

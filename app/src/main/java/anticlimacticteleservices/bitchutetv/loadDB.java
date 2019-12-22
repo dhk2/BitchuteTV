@@ -18,9 +18,9 @@ public class loadDB extends AsyncTask<Void,Void,Void> {
                 .build();
         videoDao = videoDatabase.videoDao();
         /*
-        List<Video> vdog = videoDao.getVideos();
-        System.out.println("size of retireved allVideos videos "+vdog.size());
-        ArrayList<Video> vcat = (ArrayList) vdog;
+        List<WebVideo> vdog = videoDao.getVideos();
+        System.out.println("size of retireved allWebVideos videos "+vdog.size());
+        ArrayList<WebVideo> vcat = (ArrayList) vdog;
         System.out.println("calling from loaddb");
         MainActivity.data.setAllVideos(vcat);
         */

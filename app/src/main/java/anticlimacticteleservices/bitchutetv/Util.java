@@ -135,7 +135,7 @@ public class Util {
                     fos.write(buffer, 0, len1);//Write new file
                 }
 
-                //Close allVideos connection after doing task
+                //Close allWebVideos connection after doing task
                 fos.close();
                 is.close();
 

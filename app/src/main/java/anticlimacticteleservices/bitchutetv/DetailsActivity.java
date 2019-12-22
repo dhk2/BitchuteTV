@@ -24,7 +24,7 @@ import androidx.fragment.app.FragmentActivity;
  */
 public class DetailsActivity extends FragmentActivity {
     public static final String SHARED_ELEMENT_NAME = "hero";
-    public static final String VIDEO = "Video";
+    public static final String VIDEO = "WebVideo";
 
     /**
      * Called when the activity is first created.

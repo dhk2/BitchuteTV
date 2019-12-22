@@ -7,7 +7,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 
-@Database(entities = {Channel.class}, version = 5, exportSchema = false)
+@Database(entities = {Channel.class}, version = 6, exportSchema = false)
 public abstract class ChannelDatabase extends RoomDatabase {
     private static anticlimacticteleservices.bitchutetv.ChannelDatabase INSTANCE;
 
@@ -19,7 +19,8 @@ public abstract class ChannelDatabase extends RoomDatabase {
                     Room.databaseBuilder(context.getApplicationContext(),ChannelDatabase.class, "channel")
         // allow queries on the main thread.
                             // Don't do this on a real app! See PersistenceBasicSample for an example.
-                          //  .allowMainThreadQueries()
+                           .allowMainThreadQueries()
+                            .fallbackToDestructiveMigration()
                             .build();
         }
         return INSTANCE;

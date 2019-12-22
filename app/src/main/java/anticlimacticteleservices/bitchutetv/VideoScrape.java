@@ -12,23 +12,20 @@ import androidx.room.Room;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
 import static android.content.Context.DOWNLOAD_SERVICE;
-import static android.content.Context.MODE_PRIVATE;
 //TODO move dissenter check outside of site specific sections
 //TODO transverse comment subthreads
 //TODO pull more useful data
 
-public class VideoScrape extends AsyncTask<Video,Video,Video> {
+public class VideoScrape extends AsyncTask<WebVideo, WebVideo, WebVideo> {
     static VideoDao videoDao;
     static ChannelDao channelDao;
-    Video vid;
+    WebVideo vid;
     VideoDatabase videoDatabase;
     ChannelDatabase channelDatabase;
     Context context;
@@ -38,18 +35,18 @@ public class VideoScrape extends AsyncTask<Video,Video,Video> {
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        Log.v("Video-Scrape","Pre-execute");
+        Log.v("WebVideo-Scrape","Pre-execute");
     }
     @Override
-    protected void onPostExecute(Video video) {
-        super.onPostExecute(video);
-        Log.v("Video-Scrape","Post-execute "+video.toCompactString());
+    protected void onPostExecute(WebVideo webVideo) {
+        super.onPostExecute(webVideo);
+        Log.v("WebVideo-Scrape","Post-execute "+ webVideo.toCompactString());
     }
     @Override
-    protected Video doInBackground(Video... videos) {
+    protected WebVideo doInBackground(WebVideo... webVideos) {
         context = this.context;
-        System.out.println("vid-scrape elapsed minutes"+(new Date().getTime()-videos[0].getLastScrape())/60000);
-        if (((new Date().getTime()-videos[0].getLastScrape())/60000)<5) {
+        System.out.println("vid-scrape elapsed minutes"+(new Date().getTime()- webVideos[0].getLastScrape())/60000);
+        if (((new Date().getTime()- webVideos[0].getLastScrape())/60000)<5) {
             return null;
         }
         else {
@@ -58,7 +55,7 @@ public class VideoScrape extends AsyncTask<Video,Video,Video> {
         context = SicSync.context;
 
         Log.d("Videoscrape","headless:"+headless);
-        vid = videos[0];
+        vid = webVideos[0];
   //      preferences = context.getSharedPreferences( "anticlimacticteleservices.sic" + "_preferences", MODE_PRIVATE);
   //      feedAge = preferences.getLong("feedAge",7);
         //TODO fix this
@@ -103,7 +100,9 @@ public class VideoScrape extends AsyncTask<Video,Video,Video> {
                 vid.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
                 vid.setMp4(doc.getElementsByTag("source").attr("src"));
                 if (vid.getAuthorID()>0) {
-                    Channel parent = channelDao.getChannelById(vid.getAuthorID());
+                    //Channel parent = channelDao.getChannelById(vid.getAuthorID());
+                    //TODO fix this
+                    Channel parent = null;
                     if (null != parent) {
                         if ((parent.isArchive()) && !vid.getMp4().isEmpty() && (null == vid.getLocalPath())) {
                             Log.v("Videoscrape","downloading "+vid.getMp4()+" to "+vid.getLocalPath());

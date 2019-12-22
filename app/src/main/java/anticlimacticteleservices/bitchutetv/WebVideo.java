@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 @Entity(tableName = "Feed_Item")
-class Video implements Serializable,Comparable<Video>
+class WebVideo implements Serializable,Comparable<WebVideo>
 {
     @PrimaryKey(autoGenerate = true)
     private long ID;
@@ -74,7 +74,7 @@ class Video implements Serializable,Comparable<Video>
     @ColumnInfo(name="author_source_id")
     private String authorSourceID;
 
-    public Video()
+    public WebVideo()
     {
         this.title = "";
         this.author = "";
@@ -104,7 +104,7 @@ class Video implements Serializable,Comparable<Video>
         this.authorSourceID="";
     }
 
-    public Video(String location)
+    public WebVideo(String location)
     {
         this.title = "";
         this.author = "";
@@ -357,7 +357,7 @@ class Video implements Serializable,Comparable<Video>
         return (new Date(date).toString() + " " + title + "  by" + author);
     }
     @Override
-    public int compareTo(Video candidate)
+    public int compareTo(WebVideo candidate)
     {
         return (this.getDate()>(candidate.getDate())  ? -1 :
                 this.getDate()==(candidate.getDate()) ? 0 : 1);
@@ -509,7 +509,7 @@ class Video implements Serializable,Comparable<Video>
     }
 
     public ArrayList <String> getRelatedVideoArray(){
-        ArrayList array = new ArrayList<Video>();
+        ArrayList array = new ArrayList<WebVideo>();
         if (null==relatedVideos){
             return array;
         }

@@ -14,57 +14,26 @@
 
 package anticlimacticteleservices.bitchutetv;
 
-import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.text.Html;
 import android.text.Spanned;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import java.io.IOException;
 
 public class DetailsDescriptionPresenter extends AbstractDetailsDescriptionPresenter {
     private Handler mHandler = new Handler();
     @Override
     protected void onBindDescription(ViewHolder viewHolder, Object item) {
-       if (item instanceof Video) {
-           Video video = (Video) item;
-           Video v = MainActivity.data.getVideo(video.getSourceID());
-           if (v != null) {
-               System.out.println("video already added, version in db " + v.toCompactString());
-               if (v.getMp4().isEmpty()) {
-                   System.out.println("Mp4 still not set");
-               } else {
-                   video = v;
-               }
-           }
-           // System.out.println(video.toCompactString());
-           viewHolder.getTitle().setText(video.getTitle());
-           viewHolder.getSubtitle().setText(video.getAuthor() + " " + video.getHackDateString());
-           String description = video.getDescription();
+       if (item instanceof WebVideo) {
+           WebVideo webVideo = (WebVideo) item;
+           viewHolder.getTitle().setText(webVideo.getTitle());
+           viewHolder.getSubtitle().setText(webVideo.getAuthor() + " " + webVideo.getHackDateString());
+           String description = webVideo.getDescription();
            Spanned sp = Html.fromHtml(description);
            viewHolder.getBody().setText(sp);
        }
        if (item instanceof Channel) {
            Channel channel = (Channel) item;
-           System.out.println("ddp attempting to display channel :"+channel.toDebugString());
-           Channel c = MainActivity.data.getChannelById(channel.getSourceID());
-           if (null == c){
-               MainActivity.data.addChannel(channel);
-           } else if (channel.getDescription().length()>c.getDescription().length()){
-               MainActivity.data.updateChannel(channel);
-           }
-           else {
-               channel = c;
-           }
            viewHolder.getTitle().setText(channel.getTitle());
            viewHolder.getSubtitle().setText(channel.getBitchuteID() + " " + channel.getDateHackString());
            String description = channel.getDescription();

@@ -5,65 +5,65 @@ import android.app.Application;
 import android.content.Context;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MasterData {
     ArrayList <Channel> allChannels;
-    ArrayList <Video> allVideos;
+    ArrayList <WebVideo> allWebVideos;
     Context context;
     Activity activity;
     Application application;
     VideoRepository vr;
 
     public MasterData (Application application, Context context){
-        allVideos = new ArrayList<Video>();
+        allWebVideos = new ArrayList<WebVideo>();
         allChannels = new ArrayList<Channel>();
         this.application = application;
         this.context = context;
         vr = new VideoRepository(application);
-        //allVideos = (ArrayList)vr.getAllVideos();
-        System.out.println(" size of datg abase"+allVideos.size());
-        Video kludge = new Video ("https://www.bitchute.com/video/BieayMdvplc/");
+        //allWebVideos = (ArrayList)vr.getAllVideos();
+        System.out.println(" size of datg abase"+ allWebVideos.size());
+        WebVideo kludge = new WebVideo("https://www.bitchute.com/video/BieayMdvplc/");
         vr.insert(kludge);
     }
     public Context getContext(){return this.context;}
     public Application getApplication(){return this.application;}
-    public ArrayList<Video> getFeed() {
-        return allVideos;
+  /*
+    public ArrayList<WebVideo> getFeed() {
+        return allWebVideos;
     }
 
-    public ArrayList<Video> getPopular() {
-        ArrayList<Video> popular = new ArrayList<Video>();
-        for (Video v : allVideos) {
+    public ArrayList<WebVideo> getPopular() {
+        ArrayList<WebVideo> popular = new ArrayList<WebVideo>();
+        for (WebVideo v : allWebVideos) {
             if (v.getCategory().equals("popular")) {
                 popular.add(v);
             }
         }
         return popular;
     }
-    public ArrayList<Video> getHistory() {
-        ArrayList<Video> history = new ArrayList<Video>();
-        for (Video v : allVideos){
+    public ArrayList<WebVideo> getHistory() {
+        ArrayList<WebVideo> history = new ArrayList<WebVideo>();
+        for (WebVideo v : allWebVideos){
             if (v.isWatched()){
                 history.add(v);
             };
         }
         return history;
     }
-    public ArrayList<Video> getTrending() {
-        ArrayList<Video> trending = new ArrayList<Video>();
-        for (Video v : allVideos){
+    public ArrayList<WebVideo> getTrending() {
+        ArrayList<WebVideo> trending = new ArrayList<WebVideo>();
+        for (WebVideo v : allWebVideos){
             if (v.getCategory().equals("trending")){
                 trending.add(v);
             }
         }
         return trending;
     }
-    public ArrayList<Video> getAllVideos() {
-        return allVideos;
+    public ArrayList<WebVideo> getAllVideos() {
+        return allWebVideos;
     }
-    public void addVideo(Video vid){
-        for (Video v : allVideos){
+    public void addVideo(WebVideo vid){
+        for (WebVideo v : allWebVideos){
             if (vid.getSourceID().equals(v.getSourceID())){
                // System.out.println("rejecting duplicate video add attempt, database "+v.toCompactString()+"\n attempted add "+vid.toCompactString() );
                 if (vid.getMp4().isEmpty()){
@@ -81,15 +81,15 @@ public class MasterData {
                 }
             }
         }
-        allVideos.add(vid);
+        allWebVideos.add(vid);
         vr.insert(vid);
     }
-    public void updateVideo(Video vid){
+    public void updateVideo(WebVideo vid){
         if (vid.getMp4().isEmpty()){
             System.out.println("trying to update with nonscraped video");
             return;
         }
-        for (Video v : allVideos){
+        for (WebVideo v : allWebVideos){
             if (v.getSourceID().equals(vid.getSourceID())){
                 if (v.getID()>vid.getID()){
                     vid.setID(v.getID());
@@ -99,13 +99,13 @@ public class MasterData {
             }
         }
     }
-    public Video getVideo(String g){
+    public WebVideo getVideo(String g){
         if (null==g) {
-            System.out.println("trying to find a null video in allVideos ");
+            System.out.println("trying to find a null video in allWebVideos ");
         }
         else
         {
-            for (Video v : allVideos) {
+            for (WebVideo v : allWebVideos) {
                 if (!(null==v)) {
                     if (g.equals(v.getSourceID())) {
                         System.out.println("returning :"+v.toCompactString());
@@ -119,7 +119,7 @@ public class MasterData {
     public void setAllVideos(ArrayList videos){
         System.out.println("called route "+videos.size());
         for (Object item : videos){
-            Video v= (Video) item;
+            WebVideo v= (WebVideo) item;
             System.out.println("adding from db "+v.toCompactString());
             addVideo(v);
         }
@@ -170,14 +170,14 @@ public class MasterData {
             addChannel(c);
         }
     }
-    public void addVideos(List <Video> vids){
-        for (Video v : vids){
+    public void addVideos(List <WebVideo> vids){
+        for (WebVideo v : vids){
             System.out.println("mass adding video:"+v.toCompactString());
             addVideo(v);
         }
     }
     public void refreshVideos(){
-     //   allVideos=(ArrayList)vr.getAllVideos();
+     //   allWebVideos=(ArrayList)vr.getAllVideos();
     }
-
+*/
 }

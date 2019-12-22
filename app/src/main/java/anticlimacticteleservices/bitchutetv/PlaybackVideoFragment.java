@@ -16,12 +16,17 @@ package anticlimacticteleservices.bitchutetv;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 
 import androidx.leanback.app.VideoSupportFragment;
 import androidx.leanback.app.VideoSupportFragmentGlueHost;
 import androidx.leanback.media.MediaPlayerAdapter;
 import androidx.leanback.media.PlaybackTransportControlGlue;
 import androidx.leanback.widget.PlaybackControlsRow;
+
+/**
+ * Handles video playback with media controls.
+ */
 
 /**
  * Handles video playback with media controls.
@@ -34,8 +39,8 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final Video video =
-                (Video) getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
+        final WebVideo video =
+                (WebVideo) getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
         System.out.println(video.toCompactString());
         if (!video.getMp4().isEmpty()) {
             VideoSupportFragmentGlueHost glueHost =
@@ -61,3 +66,4 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
         }
     }
 }
+

@@ -51,6 +51,10 @@ class Channel implements Serializable{
     @ColumnInfo(name="date_hack")
     private String dateHackString;
 
+    @ColumnInfo(name = "subscribed")
+    private boolean subscribed;
+
+
     public Channel(){
         this.title="";
         this.author="";
@@ -71,6 +75,7 @@ class Channel implements Serializable{
         this.localPath="";
         this.supported=false;
         this.dateHackString="";
+        this.subscribed=false;
     }
     public Channel(String url) {
         this.url = url;
@@ -105,6 +110,7 @@ class Channel implements Serializable{
         this.localPath="";
         this.supported=false;
         this.dateHackString="";
+        this.subscribed=false;
  //       toString();
     }
 
@@ -339,5 +345,13 @@ class Channel implements Serializable{
 
     public void setDateHackString(String dateHackString) {
         this.dateHackString = dateHackString;
+    }
+
+    public boolean isSubscribed() {
+        return subscribed;
+    }
+
+    public void setSubscribed(boolean subscribed) {
+        this.subscribed = subscribed;
     }
 }

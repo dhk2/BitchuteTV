@@ -5,14 +5,12 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.ViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class VideoViewModel extends AndroidViewModel {
     private VideoRepository repository;
-    private LiveData<List<Video>> allVideos;
+    private LiveData<List<WebVideo>> allVideos;
 
 
     public VideoViewModel(@NonNull Application application) {
@@ -23,17 +21,18 @@ public class VideoViewModel extends AndroidViewModel {
         allVideos = repository.getAllVideos();
         System.out.println("created video view model"+allVideos.getValue());
     }
-    public void insert(Video video){
-        repository.insert(video);
+    public void insert(WebVideo webVideo){
+        repository.insert(webVideo);
     }
-    public void update(Video video){
-        repository.update(video);
+    public void update(WebVideo webVideo){
+        repository.update(webVideo);
     }
-    public void delete(Video video){
-        repository.delete(video);
+    public void delete(WebVideo webVideo){
+        repository.delete(webVideo);
     }
-    public LiveData<List<Video>> getAllVideos(){
+    public LiveData<List<WebVideo>> getAllVideos(){
         return  allVideos;
     }
+    public  List <WebVideo> getDeadVideos(){return repository.getDeadWebVideos();}
 
 }

@@ -14,18 +14,13 @@
 
 package anticlimacticteleservices.bitchutetv;
 
-import android.content.Context;
-import android.content.res.XmlResourceParser;
 import android.graphics.drawable.Drawable;
 
 import androidx.leanback.widget.ImageCardView;
 import androidx.leanback.widget.Presenter;
 import androidx.core.content.ContextCompat;
 
-import android.media.Image;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.util.Xml;
 import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
@@ -85,14 +80,14 @@ public class CardPresenter extends Presenter {
         //        Movie movie = (Movie) item;
         ImageCardView cardView = (ImageCardView) viewHolder.view;
         Log.d(TAG, "onBindViewHolder");
-        if (item instanceof Video){
-            Video video = (Video) item;
-            if (video.getThumbnail() != null) {
-                cardView.setTitleText(video.getTitle());
-                cardView.setContentText(video.getAuthor());
+        if (item instanceof WebVideo){
+            WebVideo webVideo = (WebVideo) item;
+            if (webVideo.getThumbnail() != null) {
+                cardView.setTitleText(webVideo.getTitle());
+                cardView.setContentText(webVideo.getAuthor());
                 cardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
                 Glide.with(viewHolder.view.getContext())
-                        .load(video.getThumbnailurl())
+                        .load(webVideo.getThumbnailurl())
                         .centerCrop()
                         .error(mDefaultCardImage)
                         .into(cardView.getMainImageView());

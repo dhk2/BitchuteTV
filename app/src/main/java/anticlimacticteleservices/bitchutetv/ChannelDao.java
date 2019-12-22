@@ -1,5 +1,6 @@
 package anticlimacticteleservices.bitchutetv;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -19,19 +20,24 @@ public interface ChannelDao {
     @Delete
     public void delete(Channel channel);
 
+   @Query("SELECT * FROM channel")
+   LiveData<List<Channel>>  getChannels();
+
     @Query("SELECT * FROM channel")
-    List<Channel> getChannels();
+    List <Channel> getDeadChannels();
 
+    @Query("Select * FROM channel WHERE source_id = :sid")
+    List<Channel> getChannelsBySourceID(String sid);
 
-    @Query("SELECT * FROM channel WHERE ID = :id")
-    public Channel getChannelById(Long id);
+//    @Query("SELECT * FROM channel WHERE ID = :id")
+//    public Channel getChannelById(Long id);
 
-    @Query("SELECT * FROM channel WHERE bitchute_id= :id OR youtube_id = :id")
-    List<Channel> getChannelsBySourceID(String id);
+//    @Query("SELECT * FROM channel WHERE bitchute_id= :id OR youtube_id = :id")
+//    List<Channel> getChannelsBySourceID(String id);
 
-    @Query("SELECT COUNT(*) from channel")
-    int countChannels();
+ //   @Query("SELECT COUNT(*) from channel")
+//    int countChannels();
 
-    @Insert
-    void insertAll(Channel... channel);
+//    @Insert
+//    void insertAll(Channel... channel);
 }

@@ -6,8 +6,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -38,7 +36,7 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
     private int dupecount=0;
     private int mirror=0;
     private int newcount=0;
-    private ArrayList<Video> allVideos;
+    private ArrayList<WebVideo> allWebVideos;
     private ArrayList<Channel> allChannels;
     private static Context context;
     private static Long feedAge;
@@ -78,7 +76,7 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
     @Override
     protected Boolean doInBackground(String... params) {
         Log.v("Channel-Update","starting on channel update");
-        Video nv = null;
+        WebVideo nv = null;
         context = SicSync.context;
         headless=true;
         if (headless){
@@ -106,8 +104,8 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
             videoDao = videoDatabase.videoDao();
         }
         if (null != videoDao){
-        //    allVideos =(ArrayList)videoDao.getVideos();
-            Log.v("Channel-Update","loaded videos from database"+allVideos.size());
+        //    allWebVideos =(ArrayList)videoDao.getVideos();
+            Log.v("Channel-Update","loaded videos from database"+ allWebVideos.size());
         }
         else {
             Log.e("Channel-Update","unable to access video database");
@@ -115,7 +113,7 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
         }
         if (null != channelDao){
 
-            allChannels = (ArrayList<Channel>) channelDao.getChannels();
+           // allChannels = (ArrayList<Channel>) channelDao.getChannels();
             Log.v("Channel-Update","Loaded channel database with "+allChannels.size());
         }
         else{
@@ -149,7 +147,7 @@ channelloop:for (Channel chan :allChannels){
                 }
                 Elements videos = doc.getElementsByTag("item");
    bitchuteLoop:for (Element video : videos) {
-                    nv = new Video(video.getElementsByTag("link").first().text());
+                    nv = new WebVideo(video.getElementsByTag("link").first().text());
                     List matches = videoDao.getVideosBySourceID(nv.getSourceID());
                     if (matches.isEmpty()) {
                         Date pd;
@@ -170,7 +168,7 @@ channelloop:for (Channel chan :allChannels){
                         nv.setUrl(video.getElementsByTag("link").first().text());
                         nv.setThumbnail(video.getElementsByTag("enclosure").first().attr("url"));
                         nv.setAuthor(chan.getTitle());
-                        allVideos.add(nv);
+                        allWebVideos.add(nv);
                         videoDao.insert(nv);
                         newcount++;
                         if (chan.isNotify()) {
@@ -186,7 +184,7 @@ channelloop:for (Channel chan :allChannels){
                 tooEarly++;
             }
         }
-        for (Video v : allVideos) {
+        for (WebVideo v : allWebVideos) {
             if (v.getLastScrape() + (scrapeInterval * 60 * 1000) < new Date().getTime()) {
                 new VideoScrape().execute(v);
             }
@@ -196,7 +194,7 @@ channelloop:for (Channel chan :allChannels){
         Util.scheduleJob(context);
         return true;
     }
-    private void createNotification(Video vid){
+    private void createNotification(WebVideo vid){
         String path="";
         Intent notificationIntent = new Intent(Intent.ACTION_VIEW);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

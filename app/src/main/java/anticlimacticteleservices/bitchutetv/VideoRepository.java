@@ -10,32 +10,41 @@ import java.util.List;
 
 public class VideoRepository {
     private VideoDao videoDao;
-    private LiveData <List<Video>> allVideos;
-    private LiveData <Video> video;
-    private ArrayList <Video> deadVideos;
+    private LiveData <List<WebVideo>> allVideos;
+    private LiveData <WebVideo> video;
+    private ArrayList <WebVideo> deadWebVideos;
     public VideoRepository(Application application){
         VideoDatabase database = VideoDatabase.getSicDatabase(application);
         videoDao =  database.videoDao();
         allVideos = videoDao.getVideos();
-        deadVideos = (ArrayList) videoDao.getDeadVideos();
+        deadWebVideos = (ArrayList) videoDao.getDeadVideos();
     }
-    public void insert (Video video){
-        new InsertVideoAsyncTask(videoDao).execute(video);
+    public void insert (WebVideo webVideo){
+        new InsertVideoAsyncTask(videoDao).execute(webVideo);
     }
-    public void update(Video video){
-        new UpdateVideoAsyncTask(videoDao).execute(video);
+    public void update(WebVideo webVideo){
+        new UpdateVideoAsyncTask(videoDao).execute(webVideo);
     }
-    public void delete(Video video){
-        new DeleteVideoAsyncTask(videoDao).execute(video);
+    public void delete(WebVideo webVideo){
+        new DeleteVideoAsyncTask(videoDao).execute(webVideo);
     }
 
-    public LiveData<List<Video>> getAllVideos(){
+    public LiveData<List<WebVideo>> getAllVideos(){
         return allVideos;
     }
-    public ArrayList<Video> getDeadVideos(){return deadVideos;}
+    public ArrayList<WebVideo> getDeadWebVideos(){return deadWebVideos;}
+    public boolean exists(String sourceID){
+        System.out.println("starting to check existence "+sourceID);
+        if (videoDao.getVideosBySourceID(sourceID).size() >0){
+            System.out.println("this one says it matches"+videoDao.getVideosBySourceID(sourceID).get(0).toCompactString());
+            System.out.println("false");
+            return true;
+        }
+        System.out.println("true");
+        return false;
+    }
 
-
-    private static class InsertVideoAsyncTask extends AsyncTask<Video,Void,Void>{
+    private static class InsertVideoAsyncTask extends AsyncTask<WebVideo,Void,Void>{
         private VideoDao videoDao;
 
         private InsertVideoAsyncTask(VideoDao videoDao){
@@ -43,14 +52,17 @@ public class VideoRepository {
         }
 
         @Override
-        protected Void doInBackground(Video... videos){
-            videoDao.insert(videos[0]);
-            System.out.println("VR inserting video "+videos[0].toDebugString());
+        protected Void doInBackground(WebVideo... webVideos){
+            WebVideo v =  webVideos[0];
+            videoDao.insert(v);
+            v = (videoDao.getVideosBySourceID(webVideos[0].getSourceID())).get(0);
+            System.out.println("VR inserted video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
+
             return null;
         }
     }
 
-    private static class DeleteVideoAsyncTask extends AsyncTask<Video,Void,Void>{
+    private static class DeleteVideoAsyncTask extends AsyncTask<WebVideo,Void,Void>{
         private VideoDao videoDao;
 
         private DeleteVideoAsyncTask(VideoDao videoDao){
@@ -58,13 +70,13 @@ public class VideoRepository {
         }
 
         @Override
-        protected Void doInBackground(Video... videos){
-            videoDao.delete(videos[0]);
+        protected Void doInBackground(WebVideo... webVideos){
+            videoDao.delete(webVideos[0]);
             return null;
         }
     }
 
-    private static class UpdateVideoAsyncTask extends AsyncTask<Video,Void,Void>{
+    private static class UpdateVideoAsyncTask extends AsyncTask<WebVideo,Void,Void>{
         private VideoDao videoDao;
 
         private UpdateVideoAsyncTask(VideoDao videoDao){
@@ -72,9 +84,16 @@ public class VideoRepository {
         }
 
         @Override
-        protected Void doInBackground(Video... videos){
-            videoDao.update(videos[0]);
-            System.out.println("VR updating video "+videos[0].toDebugString());
+        protected Void doInBackground(WebVideo... webVideos){
+            WebVideo v = webVideos[0];
+            if (v.getID()>0){
+                System.out.println("Updating video "+v.getID());
+            }
+            else{
+                System.out.println("Attempting to update vidoe without source id");
+            }
+            videoDao.update(v);
+            System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
             return null;
         }
 

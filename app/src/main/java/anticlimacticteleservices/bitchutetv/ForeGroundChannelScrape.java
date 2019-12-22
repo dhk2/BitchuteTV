@@ -4,38 +4,43 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.room.Room;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> {
     String error ="";
-
+    ChannelRepository cr;
+    VideoRepository vr;
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
         Log.v("Channel-Scrape","Pre-execute");
-        System.out.println("passed channel");
     }
-
 
     @Override
     protected Channel doInBackground(Channel... channels) {
-
+        int updatelevel=0;
+        cr = new ChannelRepository(MainActivity.data.getApplication());
+        vr = new VideoRepository(MainActivity.data.getApplication());
+        Channel oc = null;
         Channel nc = channels[0];
-        Channel channelCheck = MainActivity.data.getChannelById(nc.getSourceID());
+        Channel channelCheck =null;
+        for (Channel c: cr.getDeadChannels()){
+            if (c.getSourceID().equals(nc.getSourceID())){
+                channelCheck=c;
+            }
+        }
         if (channelCheck != null){
             if (channelCheck.getDescription().isEmpty()) {
                 System.out.println("scraping existing but unscraped channel " + channelCheck.toDebugString());
+                oc = channelCheck;
             }
             else {
                 System.out.println("rescraping previously scraped chnnel"+channelCheck.toDebugString());
+                oc = channelCheck;
             }
         }
         else{
@@ -55,51 +60,31 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
                     nc.setDescription("(intentionally left blank)");
                 }
             }
-            ChannelDao channelDao;
-            ChannelDatabase channelDatabase;
-            channelDatabase = Room.databaseBuilder(MainActivity.data.getContext(), ChannelDatabase.class, "channeldb")
-                    .fallbackToDestructiveMigration()
-                    .build();
-            channelDao = channelDatabase.ChannelDao();
-            List test=channelDao.getChannelsBySourceID(nc.getSourceID());
-            System.out.println(test.size());
-            if (test.size()==0) {
+            if (oc == null) {
                 System.out.println("no video in database, adding to database");
-                channelDao.insert(nc);
-                nc= channelDao.getChannelsBySourceID(nc.getSourceID()).get(0);
+                cr.insert(nc);
             }
             else{
-                Channel archivedChannel = (Channel) test.get(0);
-                System.out.println("version pulled out of database for comparison" +archivedChannel.toDebugString());
-                    archivedChannel.setDescription(nc.getDescription());
-                    archivedChannel.setDateHackString(nc.getDateHackString());
-                    archivedChannel.setTitle(nc.getTitle());
-                    archivedChannel.setThumbnailurl(nc.getThumbnail());
-                    archivedChannel.setThumbnail(nc.getThumbnailurl());
-                    archivedChannel.setAuthor(nc.getAuthor());
-                    channelDao.update(archivedChannel);
-                    nc = channelDao.getChannelsBySourceID(nc.getSourceID()).get(0);
+                System.out.println("version pulled out of database for comparison" +oc.toDebugString());
+                    oc.setDescription(nc.getDescription());
+                    oc.setDateHackString(nc.getDateHackString());
+                    oc.setTitle(nc.getTitle());
+                    oc.setThumbnailurl(nc.getThumbnail());
+                    oc.setThumbnail(nc.getThumbnailurl());
+                    oc.setAuthor(nc.getAuthor());
+                    cr.update(oc);
             }
-            Channel testChannel=MainActivity.data.getChannelById(nc.getSourceID());
-            if (testChannel == null){
-                System.out.println("nothing in main, adding value" );
-                MainActivity.data.addChannel(nc);
-                System.out.println(MainActivity.data.getChannelById(nc.getSourceID()));
-            }
-            else {
-                System.out.println("updating main value");
-                MainActivity.data.updateChannel(nc);
-                System.out.println(MainActivity.data.getChannelById(nc.getSourceID()));
-            }
-            System.out.println("final db value "+channelDao.getChannelById(nc.getID()));
-            ArrayList <Video> videos = Bitchute.getVideos(doc);
-            for (Video v : videos){
+
+            ArrayList <WebVideo> relatedWebVideos = Bitchute.getVideos(doc);
+  related:  for (WebVideo v : relatedWebVideos){
+                for (WebVideo check : vr.getDeadWebVideos()) {
+                    if (check.getSourceID().equals(v.getSourceID())) {
+                        continue related;
+                    }
+                }
                 v.setAuthorSourceID(nc.getBitchuteID());
-                MainActivity.data.addVideo(v);
+                vr.insert(v);
             }
-            //MainActivity.data.addVideos(Bitchute.getVideos(doc));
-            System.out.println(channelDao.getChannels().size());
-            channelDatabase.close();
         } catch (IOException e) {
             e.printStackTrace();
             Log.e("Videoscrape","network failure in bitchute scrape for "+nc.toCompactString());
