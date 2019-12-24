@@ -15,7 +15,6 @@ public class VideoViewModel extends AndroidViewModel {
 
     public VideoViewModel(@NonNull Application application) {
         super(application);
-        System.out.println("creating video view model");
 
         repository = new VideoRepository((application));
         allVideos = repository.getAllVideos();

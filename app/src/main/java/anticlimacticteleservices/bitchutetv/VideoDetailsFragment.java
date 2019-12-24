@@ -100,27 +100,22 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             @Override
             public void onChanged(List<WebVideo> webVideos) {
                 System.out.println("something changed in teh data");
-                if (mSelectedWebVideo != null){
-                    System.out.println("something changed, currently displaying "+ mSelectedWebVideo.toCompactString());
-                    System.out.println("waiting for update:"+waitingForUpdate);
-                    if (waitingForUpdate){
-                        for (WebVideo v : webVideos){
-                            if (v.getSourceID().equals(mSelectedWebVideo.getSourceID())) {
-                                if (!mSelectedWebVideo.getMp4().isEmpty() && !v.getMp4().isEmpty()) {
 
-                                    mSelectedWebVideo = v;
-                                    mAdapter.clear();
-                                    setupDetailsOverviewRow();
-                                    setupDetailsOverviewRowPresenter();
-                                    setAdapter(mAdapter);
-                                    initializeBackground(mSelectedWebVideo);
-                                    setupRelatedMovieListRow();
-                                    waitingForUpdate=false;
-                                }
-                                else {
-                                    System.out.println("not updating display view because we still dont have a n mp4");
-                                }
-                            }
+                if (mSelectedWebVideo != null) {
+
+                    System.out.println("something changed, currently displaying " + mSelectedWebVideo.toCompactString());
+                    System.out.println("waiting for update:" + waitingForUpdate);
+                    if (waitingForUpdate) {
+                        if (!mSelectedWebVideo.getMp4().isEmpty()) {
+                            mAdapter.clear();
+                            setupDetailsOverviewRow();
+                            setupDetailsOverviewRowPresenter();
+                            setAdapter(mAdapter);
+                            initializeBackground(mSelectedWebVideo);
+                            setupRelatedMovieListRow();
+                            waitingForUpdate = false;
+                        } else {
+                            System.out.println("not updating display view because we still dont have a n mp4");
                         }
                     }
                 }
@@ -328,6 +323,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                         mSelectedChannel.setSubscribed(true);
                     }
                     cvm.update(mSelectedChannel);
+                    System.out.println(mSelectedChannel.toDebugString());
                 }
                 if (action.getId() == ACTION_WATCH) {
                     if (!mSelectedWebVideo.getMp4().isEmpty()) {

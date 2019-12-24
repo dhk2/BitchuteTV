@@ -50,8 +50,8 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
                 nv.setLastScrape(new Date().getTime());
                 System.out.println("base data scraped");
 
-                //ArrayList<WebVideo> relatedcontent= (ArrayList) Bitchute.getVideos(doc);
-                ArrayList<WebVideo> relatedcontent=new ArrayList<WebVideo>();
+                ArrayList<WebVideo> relatedcontent= (ArrayList) Bitchute.getVideos(doc);
+               // ArrayList<WebVideo> relatedcontent=new ArrayList<WebVideo>();
                 System.out.println(relatedcontent.size()+" related videos");
      related:  for (WebVideo v : relatedcontent) {
 
