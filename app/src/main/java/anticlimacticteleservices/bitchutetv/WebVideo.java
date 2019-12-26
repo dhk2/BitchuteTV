@@ -1,5 +1,7 @@
 package anticlimacticteleservices.bitchutetv;
 
+import android.util.Log;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -121,6 +123,12 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             String[] segments = location.split("/");
             sourceID = segments[segments.length - 1];
             bitchuteID =sourceID;
+        }
+        if (null == sourceID){
+            Log.e("WebVideo-new","no source id found when creating new video, malformed url or somesuch "+location);
+        }
+        if (sourceID.isEmpty()){
+            Log.e("WebVideo-new","blank source id found when creating new video, malformed url or somesuch "+location);
         }
         this.watched = false;
         this.date = 0;
@@ -509,12 +517,19 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
 
     public ArrayList <String> getRelatedVideoArray(){
+        System.out.println("getting related videos \n "+relatedVideos);
         ArrayList array = new ArrayList<WebVideo>();
         if (null==relatedVideos){
             return array;
         }
-        for (String g :relatedVideos.split("\n")){
+        for (String g :(relatedVideos).split("\n")){
+            //todo fix whatever bug is apending a the string 'null' at the start of video source id
+            if (g.contains("null")){
+                g=g.substring(4);
+                System.out.println("fixed version "+g);
+            }
             array.add(g);
+            System.out.println("adding "+g+" to array");
         }
         return array;
     }
@@ -524,11 +539,26 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
 
     public void addRelatedVideos(String video) {
-        this.relatedVideos = relatedVideos+video+"\n";
+        if (video.equals("video")){
+            Log.d("webvideo-arv", "bogus source id error");
+        }
+        else {
+            if (null==getRelatedVideos() || relatedVideos.isEmpty()) {
+                relatedVideos = video + "\n";
+            } else {
+                this.relatedVideos = relatedVideos + video + "\n";
+            }
+
+            System.out.println("Adding related videos to " + this.sourceID + " adding " + video);
+        }
     }
+
     public void setrelatedVideos (ArrayList <String> related){
         String builder ="";
         for (String g : related){
+            if (g.contains("null")){
+                    g = g.substring(4);
+            }
             builder =builder+g+"\n";
         }
         this.relatedVideos=builder;
@@ -540,5 +570,71 @@ class WebVideo implements Serializable,Comparable<WebVideo>
 
     public void setAuthorSourceID(String authorSourceID) {
         this.authorSourceID = authorSourceID;
+    }
+    public boolean smartUpdate(WebVideo newer){
+        if (newer.getRelatedVideos().length()>this.relatedVideos.length()){
+            this.relatedVideos=newer.getRelatedVideos();
+        }
+        if (newer.getAuthor().length()>this.author.length()){
+            this.author=newer.getAuthor();
+        }
+        if (newer.getAuthorID()>0){
+            if (this.authorID<1){
+                this.authorID
+            }
+            if (newer.getAuthorID() != authorID){
+                Log.d("WebVideo-smartupdate","mismatched authorID "+authorID+"!="+newer.getAuthorID());
+                return false;
+            }
+        }
+        if (!newer.getAuthorSourceID().isEmpty()){
+            if (this.authorSourceID.isEmpty()){
+                this.authorSourceID = newer.getAuthorSourceID();
+            }
+            if (newer.getAuthorSourceID() != authorSourceID){
+                Log.d("WebVideo-smartupdate","mismatched authorSourceID "+authorSourceID+"!="+newer.getAuthorSourceID());
+                return false;
+            }
+        }
+        if (!newer.getRelatedVideos().isEmpty()){
+            if (this.relatedVideos.isEmpty()){
+                this.relatedVideos = newer.getRelatedVideos();
+            }
+            if (!newer.getRelatedVideos().equals(relatedVideos)){
+                Log.d("WebVideo-smartupdate","mismatched related videoss "+relatedVideos+"!="+newer.getRelatedVideos());
+                return false;
+            }
+        }
+        if (!newer.getMp4().isEmpty()){
+            if (this.mp4.isEmpty()){
+                this.mp4 = newer.getMp4();
+            }
+            if (!newer.getMp4().equals(this.mp4)){
+                Log.d("WebVideo-smartupdate","mismatched mp4 "+mp4+"!="+newer.getMp4());
+                return false;
+            }
+        }
+        if (!newer.getThumbnail().isEmpty()){
+            if (this.thumbnailurl.isEmpty()){
+                this.thumbnailurl = newer.getThumbnail();
+            }
+            if (!newer.getThumbnail().equals(this.thumbnailurl)){
+                Log.d("WebVideo-smartupdate","mismatched thumbnail "+thumbnailurl+"!="+newer.getThumbnail());
+                return false;
+            }
+        }
+        if (!newer.getTitle().isEmpty()){
+            if (this.title.isEmpty()){
+                this.title = newer.getMp4();
+            }
+            if (!newer.getTitle().equals(this.title)){
+                Log.d("WebVideo-smartupdate","mismatched title "+title+"!="+newer.getTitle());
+                return false;
+            }
+        }
+
+
+        this.get
+        return false;
     }
 }

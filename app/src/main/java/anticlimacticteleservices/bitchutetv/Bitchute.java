@@ -35,7 +35,23 @@ public class Bitchute {
                 }
                 try {
                     doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
+
                     foundVideos=getVideos(doc);
+                    if (type == "category"){
+                        for (Object o : foundVideos){
+                            WebVideo v = (WebVideo)o;
+                            v.setCategory(target);
+                        }
+                    }
+
+                    if (type == "hashtag"){
+                        for (Object o : foundVideos){
+                            WebVideo v = (WebVideo)o;
+                            if (!v.getHashtags().contains(target)){
+                                v.setHashtags("#"+target);
+                            };
+                        }
+                    }
                 } catch (MalformedURLException e) {
                     Log.e("get video string", "Malformed URL: " + e.getMessage());
                 } catch (IOException e) {

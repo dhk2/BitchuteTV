@@ -88,12 +88,16 @@ public class VideoRepository {
             WebVideo v = webVideos[0];
             if (v.getID()>0){
                 System.out.println("Updating video "+v.getID());
+                videoDao.update(v);
+                System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
             }
             else{
-                System.out.println("Attempting to update vidoe without source id");
+                System.out.println("Attempting to update vidoe without source id, inserting instead");
+                videoDao.insert(v);
+                System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
+
             }
-            videoDao.update(v);
-            System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
+
             return null;
         }
 

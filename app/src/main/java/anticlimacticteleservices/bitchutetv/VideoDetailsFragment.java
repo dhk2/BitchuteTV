@@ -381,6 +381,9 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 if (null == candidate) {
 
                     System.out.println("failed to find existing copy of video for "+g);
+                    if (g.contains("null")){
+                        System.out.println("the null is coming from creating a new related video somehow");
+                    }
                     WebVideo newRelated = (new WebVideo("https://www.bitchute.com/video/" + g));
                     list.add(newRelated);
 
