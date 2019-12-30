@@ -56,6 +56,7 @@ import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import java.lang.reflect.Array;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -87,6 +88,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
     private boolean waitingForUpdate;
     VideoViewModel vvm;
     ChannelViewModel cvm;
+    ArrayList<WebVideo> allVideos;
 //    ChannelRepository repository;
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -96,16 +98,18 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         setOnItemViewClickedListener(new VideoDetailsFragment.ItemViewClickedListener());
         vvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
+        allVideos=(ArrayList)vvm.getDeadVideos();
         vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
             public void onChanged(List<WebVideo> webVideos) {
+                allVideos=(ArrayList)webVideos;
                 System.out.println("something changed in teh data");
 
                 if (mSelectedWebVideo != null) {
 
                     System.out.println("something changed, currently displaying " + mSelectedWebVideo.toCompactString());
                     System.out.println("waiting for update:" + waitingForUpdate);
-                    if (waitingForUpdate) {
+                    if (true) {
                         if (!mSelectedWebVideo.getMp4().isEmpty()) {
                             mAdapter.clear();
                             setupDetailsOverviewRow();
@@ -327,6 +331,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 }
                 if (action.getId() == ACTION_WATCH) {
                     if (!mSelectedWebVideo.getMp4().isEmpty()) {
+                        mSelectedWebVideo.setWatched(true);
                         Intent intent = new Intent(getActivity(), PlaybackActivity.class);
                         intent.putExtra(DetailsActivity.VIDEO, mSelectedWebVideo);
                         startActivity(intent);
@@ -371,23 +376,18 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         WebVideo candidate;
         if (mSelectedWebVideo != null){
             for (String g: mSelectedWebVideo.getRelatedVideoArray()){
-                System.out.println("setting up related video row for "+ mSelectedWebVideo.getRelatedVideoArray().size());
+                System.out.println(allVideos.size()+" setting up related video row for "+ mSelectedWebVideo.getRelatedVideoArray());
                 candidate = null;
-                for (WebVideo v: vvm.getDeadVideos()){
+                for (WebVideo v: allVideos){
                     if (v.getSourceID().equals(g)){
                         candidate = v;
                     }
+                    else {
+                      //  System.out.println(v.getID()+" ["+v.getSourceID()+"]=["+g+"]");
+                    }
                 }
                 if (null == candidate) {
-
                     System.out.println("failed to find existing copy of video for "+g);
-                    if (g.contains("null")){
-                        System.out.println("the null is coming from creating a new related video somehow");
-                    }
-                    WebVideo newRelated = (new WebVideo("https://www.bitchute.com/video/" + g));
-                    list.add(newRelated);
-
-                    //new ForeGroundVideoScrape().execute(newRelated);
                 }
                 else {
                     list.add(candidate);
@@ -395,7 +395,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             }
         }
         if (mSelectedChannel !=null){
-            for (WebVideo v : vvm.getDeadVideos()){
+            for (WebVideo v : allVideos){
                 if (v.getAuthorSourceID().equals(mSelectedChannel.getSourceID())){
                     list.add(v);
                 }
@@ -403,21 +403,34 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         }
         if (null != list) {
             Collections.shuffle(list);
-            System.out.println("setting "+ list.size()+" objects");
-
-            CardPresenter bob=new CardPresenter();
+            System.out.println("setting " + list.size() + " objects");
+            CardPresenter bob = new CardPresenter();
             ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(bob);
             for (int j = 0; j < list.size(); j++) {
                 listRowAdapter.add(list.get(j));
-
             }
             HeaderItem header = new HeaderItem(0, subcategories[0]);
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
         }
+        List category=new ArrayList<WebVideo>();
+        CardPresenter bob = new CardPresenter();
+        ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(bob);
+        if (mSelectedWebVideo != null && !mSelectedWebVideo.getCategory().isEmpty()){
+            int count=0;
+            for (WebVideo v : allVideos){
+                if ((v.getCategory().equals(mSelectedWebVideo.getCategory())) && !v.getSourceID().equals(mSelectedWebVideo.getSourceID())){
+                    listRowAdapter.add(v);
+                    count++;
+                }
+            }
+            if (count>0) {
+                HeaderItem header = new HeaderItem(1, "Videos in category " + mSelectedWebVideo.getCategory());
+                mAdapter.add(new ListRow(header, listRowAdapter));
+                mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
+            }
+        }
     }
-
-
     private int convertDpToPixel(Context context, int dp) {
         float density = context.getResources().getDisplayMetrics().density;
         return Math.round((float) dp * density);

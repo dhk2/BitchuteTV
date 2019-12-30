@@ -28,6 +28,7 @@ public class MasterData {
         trendingHashtags=new ArrayList<String>();
         followingHashtags =new ArrayList<String>();
         followingHashtags.add((String) "#maga");
+
     }
     public Context getContext(){return this.context;}
     public Application getApplication(){return this.application;}

@@ -56,8 +56,7 @@ public class VideoRepository {
             WebVideo v =  webVideos[0];
             videoDao.insert(v);
             v = (videoDao.getVideosBySourceID(webVideos[0].getSourceID())).get(0);
-            System.out.println("VR inserted video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
-
+            System.out.println("VR inserted video "+v.toCompactString());
             return null;
         }
     }

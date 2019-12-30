@@ -81,7 +81,7 @@ public class MainFragment extends BrowseSupportFragment {
     private List subscriptions;
     private List history ;
     private List favorites;
-    private List allVideos;
+    private ArrayList<WebVideo> allVideos;
     private boolean upToDate=false;
     private boolean rowsSetup=false;
     private VideoViewModel vvm;
@@ -102,9 +102,10 @@ public class MainFragment extends BrowseSupportFragment {
         favorites = new ArrayList<WebVideo>();
         suggested = new ArrayList<Channel>();
 
+
         vvm =   ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
-
+        allVideos=(ArrayList)vvm.getDeadVideos();
         if (debug) System.out.println(("view model attached successfully"));
         vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
@@ -112,7 +113,7 @@ public class MainFragment extends BrowseSupportFragment {
                 if (debug)System.out.println("something changed in the data "+ webVideos.size());
                 followingHashtags = (ArrayList)MainActivity.data.followingHashtags;
                 trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
-                allVideos = webVideos;
+                allVideos = (ArrayList)webVideos;
                 popular = new ArrayList<WebVideo>();
                 trending = new ArrayList<WebVideo>();
                 subscriptions = new ArrayList<WebVideo>();
@@ -151,7 +152,7 @@ public class MainFragment extends BrowseSupportFragment {
             }
         });
         allChannels=(ArrayList)cvm.getDeadChannels();
-        allVideos=(ArrayList)vvm.getDeadVideos();
+
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
@@ -167,7 +168,8 @@ public class MainFragment extends BrowseSupportFragment {
         new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         if ((followingHashtags != null) && (followingHashtags.size()>0)) {
             for (String g : followingHashtags) {
-                new Bitchute.GetVideos().execute("/hashtag/" + g);
+                System.out.println("Getting videos for hashtag "+g);
+                new Bitchute.GetVideos().execute("/hashtag/" + g.substring(1));
             }
         }
         prepareBackgroundManager();
@@ -185,8 +187,6 @@ public class MainFragment extends BrowseSupportFragment {
         //TODO make this work without losing place in row on reload
         if (rowsSetup && !upToDate){
          loadRows();
-         rowsSetup=true;
-         upToDate=true;
        }
     }
 
@@ -231,7 +231,7 @@ public class MainFragment extends BrowseSupportFragment {
             headerID++;
         }
         if (history.size()>0) {
-            for (Object v : trending) {
+            for (Object v : history) {
                 listRowAdapter.add(v);
             }
             HeaderItem header = new HeaderItem(headerID, "History");
@@ -242,11 +242,12 @@ public class MainFragment extends BrowseSupportFragment {
             headerID++;
         }
         if (MainActivity.data.followingHashtags.size()>0) {
+            Log.d("MF-Loadrow","checking hashtags");
             for (Object g : MainActivity.data.followingHashtags) {
                 String tag=(String)g;
                 for (Object v:allVideos){
                     WebVideo vid =(WebVideo)v;
-                    System.out.println(((WebVideo) v).toDebugString());
+                    //System.out.println(((WebVideo) v).toDebugString());
                     if ((vid.getHashtags()).contains(tag)){
                         listRowAdapter.add(v);
                     }
@@ -259,18 +260,6 @@ public class MainFragment extends BrowseSupportFragment {
             }
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-        }
-
-        if (allVideos.size()>0) {
-            for (Object v : allVideos) {
-                listRowAdapter.add(v);
-            }
-            HeaderItem header = new HeaderItem(headerID, "All");
-            rowsAdapter.add(new ListRow(header, listRowAdapter));
-          //  rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
-            cardPresenter = new CardPresenter();
-            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-            headerID++;
         }
         if (suggested.size()>0) {
             for (int j = 0; j < suggested.size(); j++) {
@@ -298,23 +287,34 @@ public class MainFragment extends BrowseSupportFragment {
                 headerID++;
             }
         }
+        if (allVideos.size()>0) {
+            for (Object v : allVideos) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "All");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            //  rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+            setAdapter(rowsAdapter);
+            HeaderItem gridHeader = new HeaderItem(headerID, "PREFERENCES");
+            GridItemPresenter mGridPresenter = new GridItemPresenter();
+            ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+            // gridRowAdapter.add(getResources().getString(R.string.grid_view));
+            //  gridRowAdapter.add(getString(R.string.error_fragment));
+            gridRowAdapter.add("Refresh");
+            gridRowAdapter.add("Authenticate");
+            gridRowAdapter.add(("Import"));
+            rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+            headerID++;
+            setAdapter(rowsAdapter);
+            rowsSetup = true;
+            upToDate = true;
+        }
+        else {
 
-        setAdapter(rowsAdapter);
-
-
-
-
-         HeaderItem gridHeader = new HeaderItem(headerID, "PREFERENCES");
-        GridItemPresenter mGridPresenter = new GridItemPresenter();
-        ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
-       // gridRowAdapter.add(getResources().getString(R.string.grid_view));
-      //  gridRowAdapter.add(getString(R.string.error_fragment));
-        gridRowAdapter.add("Refresh");
-        gridRowAdapter.add("Authenticate");
-        gridRowAdapter.add(("Import"));
-        rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
-        headerID++;
-        setAdapter(rowsAdapter);
+        }
     }
 
     private void prepareBackgroundManager() {

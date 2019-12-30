@@ -104,6 +104,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         this.keep=false;
         this.lastScrape=0l;
         this.authorSourceID="";
+        this.relatedVideos="";
     }
 
     public WebVideo(String location)
@@ -150,6 +151,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         this.keep=false;
         this.lastScrape=0l;
         this.authorSourceID="";
+        this.relatedVideos="";
 
     }
 
@@ -356,7 +358,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         if (errors>0)
             bits = bits+ " errors:"+errors;
 
-        return("["+ID+"] ("+authorID+")"+ author +":"+title + " Source ID:"+authorSourceID+ "\n" +
+        return("["+ID+"] ("+authorSourceID+")"+ author +":"+title + "\n" +
+                "thumbnail:"+thumbnailurl+" hash tags:"+hashtags+" category"+category+
                 "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+bits);
     }
 
@@ -517,10 +520,12 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
 
     public ArrayList <String> getRelatedVideoArray(){
-        System.out.println("getting related videos \n "+relatedVideos);
-        ArrayList array = new ArrayList<WebVideo>();
-        if (null==relatedVideos){
+       // System.out.println("getting related videos \n "+relatedVideos);
+        ArrayList array = new ArrayList<String>();
+        if (null==relatedVideos || relatedVideos==""){
+            System.out.println("no related videos for "+toCompactString());
             return array;
+
         }
         for (String g :(relatedVideos).split("\n")){
             //todo fix whatever bug is apending a the string 'null' at the start of video source id
@@ -529,7 +534,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 System.out.println("fixed version "+g);
             }
             array.add(g);
-            System.out.println("adding "+g+" to array");
+            //System.out.println("adding "+g+" to array");
         }
         return array;
     }
@@ -572,69 +577,96 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         this.authorSourceID = authorSourceID;
     }
     public boolean smartUpdate(WebVideo newer){
-        if (newer.getRelatedVideos().length()>this.relatedVideos.length()){
-            this.relatedVideos=newer.getRelatedVideos();
-        }
+        boolean updated = false;
+        this.hackDateString = newer.getHackDateString();
         if (newer.getAuthor().length()>this.author.length()){
             this.author=newer.getAuthor();
+            updated=true;
         }
         if (newer.getAuthorID()>0){
             if (this.authorID<1){
-                this.authorID
+                this.authorID=newer.getAuthorID();
+                updated = true;
             }
             if (newer.getAuthorID() != authorID){
                 Log.d("WebVideo-smartupdate","mismatched authorID "+authorID+"!="+newer.getAuthorID());
-                return false;
             }
         }
         if (!newer.getAuthorSourceID().isEmpty()){
             if (this.authorSourceID.isEmpty()){
+                updated=true;
                 this.authorSourceID = newer.getAuthorSourceID();
             }
             if (newer.getAuthorSourceID() != authorSourceID){
                 Log.d("WebVideo-smartupdate","mismatched authorSourceID "+authorSourceID+"!="+newer.getAuthorSourceID());
-                return false;
             }
         }
         if (!newer.getRelatedVideos().isEmpty()){
             if (this.relatedVideos.isEmpty()){
                 this.relatedVideos = newer.getRelatedVideos();
+                updated = true;
             }
             if (!newer.getRelatedVideos().equals(relatedVideos)){
                 Log.d("WebVideo-smartupdate","mismatched related videoss "+relatedVideos+"!="+newer.getRelatedVideos());
-                return false;
             }
         }
         if (!newer.getMp4().isEmpty()){
             if (this.mp4.isEmpty()){
                 this.mp4 = newer.getMp4();
+                updated =true;
             }
             if (!newer.getMp4().equals(this.mp4)){
                 Log.d("WebVideo-smartupdate","mismatched mp4 "+mp4+"!="+newer.getMp4());
-                return false;
             }
         }
         if (!newer.getThumbnail().isEmpty()){
             if (this.thumbnailurl.isEmpty()){
                 this.thumbnailurl = newer.getThumbnail();
+                updated = true;
             }
             if (!newer.getThumbnail().equals(this.thumbnailurl)){
                 Log.d("WebVideo-smartupdate","mismatched thumbnail "+thumbnailurl+"!="+newer.getThumbnail());
-                return false;
             }
         }
         if (!newer.getTitle().isEmpty()){
             if (this.title.isEmpty()){
                 this.title = newer.getMp4();
+                updated = true;
             }
             if (!newer.getTitle().equals(this.title)){
                 Log.d("WebVideo-smartupdate","mismatched title "+title+"!="+newer.getTitle());
-                return false;
+            }
+        }
+        if (!newer.getCategory().isEmpty()){
+            if (this.category.isEmpty()){
+                this.category = newer.getCategory();
+                updated = true;
+            }
+            if (!newer.getCategory().equals(this.category)){
+                Log.d("WebVideo-smartupdate","mismatched category "+category+"!="+newer.getCategory());
+                this.category=newer.getCategory();
+                updated =true;
+            }
+        }
+        if (!newer.getDescription().isEmpty()){
+            if (this.description.isEmpty()){
+                this.description = newer.getDescription();
+                updated=true;
+            }
+            if (!newer.getDescription().equals(this.description)){
+                Log.d("WebVideo-smartupdate","mismatched title "+description+"!="+newer.getDescription());
+            }
+        }
+        if (!newer.getMagnet().isEmpty()){
+            if (this.magnet.isEmpty()){
+                this.magnet = newer.getMagnet();
+                updated = true;
+            }
+            if (!newer.getMagnet().equals(this.magnet)){
+                Log.d("WebVideo-smartupdate","mismatched magnet "+magnet+"!="+newer.getMagnet());
             }
         }
 
-
-        this.get
-        return false;
+        return updated;
     }
 }
