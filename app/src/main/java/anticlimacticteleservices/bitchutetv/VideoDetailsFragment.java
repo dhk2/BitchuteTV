@@ -88,6 +88,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
     private boolean waitingForUpdate;
     VideoViewModel vvm;
     ChannelViewModel cvm;
+    ArrayList<Channel> allChannels;
     ArrayList<WebVideo> allVideos;
 //    ChannelRepository repository;
     @Override
@@ -126,6 +127,15 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             }
         });
         System.out.println(("vvm completed"));
+        cvm.getAllChannels().observe(this, new Observer<List<Channel>>(){
+            @Override
+            public void onChanged(List<Channel> channels) {
+                System.out.println("something changed in the channel data "+channels.size());
+                allChannels = (ArrayList)channels;
+            }
+        });
+        allChannels=(ArrayList)cvm.getDeadChannels();
+
         mDetailsBackground = new DetailsSupportFragmentBackgroundController(this);
         //looks ugly
         System.out.println("set backgrojnd controller");
@@ -332,6 +342,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 if (action.getId() == ACTION_WATCH) {
                     if (!mSelectedWebVideo.getMp4().isEmpty()) {
                         mSelectedWebVideo.setWatched(true);
+                        Bitchute.setWatched(mSelectedWebVideo);
                         Intent intent = new Intent(getActivity(), PlaybackActivity.class);
                         intent.putExtra(DetailsActivity.VIDEO, mSelectedWebVideo);
                         startActivity(intent);
@@ -342,7 +353,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 }
                 if (action.getId() == ACTION_GOTO_CHANNEL){
                     Channel targetChannel=null;
-                    for (Channel c : cvm.getDeadChannels()){
+                    for (Channel c : allChannels){
                         System.out.println(mSelectedWebVideo.getAuthorSourceID()+" = "+c.getSourceID());
                         if (c.getSourceID().equals(mSelectedWebVideo.getAuthorSourceID())){
                             targetChannel = c;

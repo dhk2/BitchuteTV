@@ -16,18 +16,23 @@ import java.util.Date;
 import java.util.List;
 
 public class Bitchute {
-        public static class GetVideos extends AsyncTask<String, String, String> {
+        public static class GetWebVideos extends AsyncTask<String, String, String> {
         String target="";
         String type="";
         Document doc;
-        List foundVideos;
+        ArrayList <WebVideo> foundVideos;
+
             @Override
             protected String doInBackground(String... strings) {
+                VideoRepository vr = new VideoRepository(MainActivity.data.getApplication());
+                ChannelRepository cr = new ChannelRepository(MainActivity.data.getApplication());
+                ArrayList <WebVideo> allVideos = vr.getDeadWebVideos();
                 String rl = strings[0];
+                Log.d("bitchute-getvideos","starting to process video search for "+rl);
                 if ((" "+rl).indexOf("/")>0) {
                     type = rl.split("/")[1];
                     target = rl.split("/")[2];
-                    System.out.println(type + "   <=>   " + target);
+                    System.out.println("("+type+")" + "   <=>   " +"["+ target+"]");
                 }
                 else {
                     type = "channel";
@@ -36,21 +41,37 @@ public class Bitchute {
                 try {
                     doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
 
-                    foundVideos=getVideos(doc);
+                    foundVideos= (ArrayList) getVideos(doc);
+                    System.out.println("found "+foundVideos.size()+" Videos looking for "+type+" "+target);
                     if (type == "category"){
-                        for (Object o : foundVideos){
-                            WebVideo v = (WebVideo)o;
+                        for (WebVideo v : foundVideos){
                             v.setCategory(target);
                         }
                     }
 
                     if (type == "hashtag"){
-                        for (Object o : foundVideos){
-                            WebVideo v = (WebVideo)o;
+                        System.out.println("setting hashtags on videos for hashtag #"+target);
+                        for (WebVideo v : foundVideos){
                             if (!v.getHashtags().contains(target)){
                                 v.setHashtags("#"+target);
                             };
+                            System.out.println(type +"should be set to "+target+ v.toCompactString());
                         }
+                    }
+                    found:  for (WebVideo v :foundVideos){
+                        for (WebVideo x : allVideos){
+                            if (x.getSourceID().equals(v.getSourceID())){
+
+                                x.smartUpdate(v);
+                                x.setHashtags("#"+target);
+                                Log.d("Bitchute-GetWebVideo","video already in database, updating "+x.toCompactString());
+                                vr.update(x);
+                                continue found;
+                            }
+                        }
+                        Log.d("Bitchute-GetWebVideo","video not in database, inserting "+v.toCompactString());
+                        v.setHashtags("#"+target);
+                        vr.insert(v);
                     }
                 } catch (MalformedURLException e) {
                     Log.e("get video string", "Malformed URL: " + e.getMessage());
@@ -184,10 +205,62 @@ public class Bitchute {
         return foundHashtags;
     }
 
+    public static String getCategoryUrl(String name) {
+        ArrayList <Category> categories = getCategories();
+        for (Category c:categories){
+            if (c.getName().equals(name)){
+                return c.getUrl();
+            }
+        }
+        return "";
+    }
 
+    public static ArrayList <Category> getCategories(){
+        ArrayList <Category> categories = new ArrayList<Category>();
+        categories.add(new Category("Anime & Animation","/category/animation/",false));
+        categories.add(new Category("Arts & Literature","/category/arts/",false));
+        categories.add(new Category("Auto & Vehicles","/category/vehicles/" ,false));
+        categories.add(new Category("Beauty & Fashion","/category/beauty/",false));
+        categories.add(new Category( "Business & Finance","/category/finance/",false));
+        categories.add(new Category("Cuisine","/category/cuisine/",false));
+        categories.add(new Category("DIY & Gardening","/category/diy/",false));
+        categories.add(new Category("Education","/category/education/",false));
+        categories.add(new Category("Entertainment","/category/entertainment/" ,false));
+        categories.add(new Category("Gaming","/category/gaming/",false));
+        categories.add(new Category("Health & Medical","/category/health/",false));
+        categories.add(new Category("Music","/category/music/",false));
+        categories.add(new Category("News & Politics","/category/news/" ,false));
+        categories.add(new Category("People & Family","/category/family/",false));
+        categories.add(new Category("Pets & Wildlife","/category/animals/",false));
+        categories.add(new Category("Science & Technology","/category/science/",false));
+        categories.add(new Category("Spirituality & Faith","/category/spirituality/",false));
+        categories.add(new Category("Sports & Fitness","/category/sport/",false));
+        categories.add(new Category("Travel","/category/travel/",false));
+        categories.add(new Category("Vlogging","/category/vlogging/",false));
+        categories.add(new Category("Other","/category/animation/",false));
+        return categories;
+    }
 
+    public static void setWatched(WebVideo video){
+        new BackgroundSetWatched().execute(video);
+    }
+    public static class BackgroundSetWatched extends AsyncTask<WebVideo, WebVideo, WebVideo> {
+        @Override
+        protected WebVideo doInBackground(WebVideo... webVideos) {
+            VideoRepository vr = new VideoRepository(MainActivity.data.getApplication());
+            WebVideo video = webVideos[0];
 
-
+            if (video.getID()>0){
+                video.setWatched(true);
+                vr.update(video);
+                MainActivity.data.setUpToDate(false);
+            }
+            else {
+                System.out.println("you somehow thought it was a good idea to marked a video watched that doesn't have an id");
+            }
+            return null;
+        }
+    }
     public static void getHomePage(){
         new BitchuteHomePage().execute("https://www.bitchute.com");
     }
@@ -203,11 +276,11 @@ public class Bitchute {
                 doc = Jsoup.connect("https://www.bitchute.com").get();
                 System.out.println("loaded bitchute home page");
                 ArrayList<WebVideo> foundWebVideos = getVideos(doc);
-                System.out.println("loaded homepage videos");
+                System.out.println("loaded homepage videos "+foundWebVideos.size());
                 List<Channel> foundChannels = getChannels(doc);
-                System.out.println("loaded home page channels");
+                System.out.println("loaded home page channels "+foundChannels.size());
                 List<String> foundHashtags = getHashtags(doc);
-                System.out.println("found hashtags");
+                System.out.println("found hashtags "+foundHashtags);
                 for (WebVideo v: foundWebVideos){
                     System.out.println("Attempting to add video "+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
                     if (!vr.exists(v.getSourceID())){
@@ -222,14 +295,22 @@ public class Bitchute {
                 }
                 for (Channel c : foundChannels){
                     System.out.println("Attempting to add channel "+c.getSourceID()+" "+c.getTitle());
+                    c.setYoutubeID("suggested");
                     if (!cr.exists(c.getSourceID())){
-                        System.out.println("adding new channel "+c.getSourceID()+" "+c.getTitle());
+                        System.out.println("adding new channel "+c.toDebugString());
                         cr.insert(c);
                     }
                     else {
                         //TODO determine if there is a use case where this update would be informative.
-                       System.out.println("Updating scraped channel");
-                       cr.update(c);
+                       System.out.println("Updating scraped channel"+c.toCompactString());
+                       for (Channel inception : cr.getDeadChannels()){
+                           System.out.println("["+inception.getSourceID()+"] == ["+c.getSourceID()+"]");
+                           if (inception.getSourceID().equals(c.getSourceID())){
+                               inception.setYoutubeID("suggested");
+                               System.out.println("this is the channel being updated "+c.toDebugString());
+                               cr.update(inception);
+                           }
+                       }
                     }
                 }
                 MainActivity.data.trendingHashtags=foundHashtags;

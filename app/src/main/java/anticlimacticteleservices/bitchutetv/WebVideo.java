@@ -589,7 +589,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 updated = true;
             }
             if (newer.getAuthorID() != authorID){
-                Log.d("WebVideo-smartupdate","mismatched authorID "+authorID+"!="+newer.getAuthorID());
+                Log.d("WebVideo-smartupdate","mismatched authorID "+this.authorID+"!="+newer.getAuthorID());
             }
         }
         if (!newer.getAuthorSourceID().isEmpty()){
@@ -597,8 +597,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 updated=true;
                 this.authorSourceID = newer.getAuthorSourceID();
             }
-            if (newer.getAuthorSourceID() != authorSourceID){
-                Log.d("WebVideo-smartupdate","mismatched authorSourceID "+authorSourceID+"!="+newer.getAuthorSourceID());
+            if (newer.getAuthorSourceID() != this.authorSourceID){
+                Log.d("WebVideo-smartupdate","mismatched authorSourceID "+this.authorSourceID+"!="+newer.getAuthorSourceID());
             }
         }
         if (!newer.getRelatedVideos().isEmpty()){
@@ -626,6 +626,15 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             }
             if (!newer.getThumbnail().equals(this.thumbnailurl)){
                 Log.d("WebVideo-smartupdate","mismatched thumbnail "+thumbnailurl+"!="+newer.getThumbnail());
+            }
+        }
+        if (!newer.getHashtags().isEmpty()){
+            if (this.hashtags.isEmpty()){
+                this.hashtags = newer.getHashtags();
+                updated = true;
+            }
+            if (!newer.getThumbnail().equals(this.thumbnailurl)){
+                Log.d("WebVideo-smartupdate","mismatched hashtags "+thumbnailurl+"!="+newer.getThumbnail());
             }
         }
         if (!newer.getTitle().isEmpty()){

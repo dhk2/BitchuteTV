@@ -29,8 +29,8 @@ public interface ChannelDao {
     @Query("Select * FROM channel WHERE source_id = :sid")
     List<Channel> getChannelsBySourceID(String sid);
 
-//    @Query("SELECT * FROM channel WHERE ID = :id")
-//    public Channel getChannelById(Long id);
+    @Query("SELECT * FROM channel WHERE ID = :id")
+    public Channel getChannelById(Long id);
 
 //    @Query("SELECT * FROM channel WHERE bitchute_id= :id OR youtube_id = :id")
 //    List<Channel> getChannelsBySourceID(String id);

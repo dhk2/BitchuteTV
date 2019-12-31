@@ -26,7 +26,9 @@ public class ChannelRepository {
 
     public LiveData<List<Channel>> getAllChannels(){return allChannels; }
     public List<Channel> getDeadChannels(){return deadChannels;}
-
+    public Channel getChannelByID(Long id){
+        return channelDao.getChannelById(id);
+    }
     private static class InsertChannelAsyncTask extends AsyncTask<Channel,Void,Void>{
         private ChannelDao channelDao;
 
@@ -75,13 +77,14 @@ public class ChannelRepository {
             super.onPostExecute(aVoid);
         }
     }
-    public boolean exists(String sourceID){
+    public boolean exists(String sourceID) {
         System.out.println("starting to check existence");
-        if (channelDao.getChannelsBySourceID(sourceID).size() >0){
-            System.out.println("false");
+        ArrayList<Channel> test = (ArrayList) channelDao.getChannelsBySourceID(sourceID);
+        if (test.size() == 0) {
+            System.out.println("no match for " + sourceID);
             return false;
         }
-        System.out.println("true");
+        System.out.println("Found a match in " + test.get(0).toCompactString());
         return true;
     }
 

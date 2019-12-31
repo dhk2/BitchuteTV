@@ -82,7 +82,7 @@ public class MainFragment extends BrowseSupportFragment {
     private List history ;
     private List favorites;
     private ArrayList<WebVideo> allVideos;
-    private boolean upToDate=false;
+   //private boolean upToDate=false;
     private boolean rowsSetup=false;
     private VideoViewModel vvm;
     private ChannelViewModel cvm;
@@ -127,14 +127,15 @@ public class MainFragment extends BrowseSupportFragment {
                     if (v.isWatched()) {history.add(v);}
                 }
                 Collections.sort(popular);
+
                 if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
                     loadRows();
                     rowsSetup=true;
-                    upToDate=true;
+                    MainActivity.data.setUpToDate(true);
                 }
                 else {
-                    upToDate=false;
+                    MainActivity.data.setUpToDate(false);
                 }
             }
         });
@@ -146,13 +147,15 @@ public class MainFragment extends BrowseSupportFragment {
                 allChannels = (ArrayList)channels;
 
                 suggested = new ArrayList<Channel>();
-                for (Channel c:allChannels){
+                for (Channel c:channels){
                     if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
                 }
             }
         });
         allChannels=(ArrayList)cvm.getDeadChannels();
-
+        for (Channel c:allChannels){
+            if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
+        }
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
@@ -168,16 +171,19 @@ public class MainFragment extends BrowseSupportFragment {
         new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         if ((followingHashtags != null) && (followingHashtags.size()>0)) {
             for (String g : followingHashtags) {
-                System.out.println("Getting videos for hashtag "+g);
-                new Bitchute.GetVideos().execute("/hashtag/" + g.substring(1));
+                System.out.println("Getting videos for hashtag "+"/hashtag/" + g.substring(1));
+                new Bitchute.GetWebVideos().execute("/hashtag/" + g.substring(1));
             }
+        }
+        else {
+            System.out.println(("failed, no hashtags available"));
         }
         prepareBackgroundManager();
 
         setupUIElements();
 
         setupEventListeners();
-
+        trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
         loadRows();
     }
 
@@ -185,7 +191,7 @@ public class MainFragment extends BrowseSupportFragment {
     public void onStart() {
         super.onStart();
         //TODO make this work without losing place in row on reload
-        if (rowsSetup && !upToDate){
+        if (!MainActivity.data.isUpToDate()){
          loadRows();
        }
     }
@@ -245,6 +251,7 @@ public class MainFragment extends BrowseSupportFragment {
             Log.d("MF-Loadrow","checking hashtags");
             for (Object g : MainActivity.data.followingHashtags) {
                 String tag=(String)g;
+                System.out.println("Searching for tag "+tag);
                 for (Object v:allVideos){
                     WebVideo vid =(WebVideo)v;
                     //System.out.println(((WebVideo) v).toDebugString());
@@ -310,7 +317,7 @@ public class MainFragment extends BrowseSupportFragment {
             headerID++;
             setAdapter(rowsAdapter);
             rowsSetup = true;
-            upToDate = true;
+            MainActivity.data.setUpToDate(true);
         }
         else {
 
@@ -407,17 +414,19 @@ public class MainFragment extends BrowseSupportFragment {
                     dialog.show();
                 }
                 if (g.equals("Refresh")) {
-                    System.out.println("refreshed "+allVideos.size()+" "+allChannels.size());
-                    System.out.println("maindata:"+MainActivity.data.trendingHashtags.size()+"  mainfragment:"+trendingHashtags.size());
+                    for (Channel c : allChannels){
+                        System.out.println(c.toCompactString());
+                    }
                 }
                 if (g.startsWith("#")){
                     System.out.println("clicked on a hashtag");
                     System.out.println(((String) item).substring(1));
-                    MainActivity.data.followingHashtags.add(g.substring(1));
+                    MainActivity.data.followingHashtags.add(g);
                     followingHashtags=(ArrayList) MainActivity.data.followingHashtags;
-                    new Bitchute.GetVideos().execute("/hashtag/"+g.substring(1));
+                    new Bitchute.GetWebVideos().execute("/hashtag/"+g.substring(1));
+                    rowsSetup=false;
                 }
-                item = "no";
+                item = g;
 
                 if (((String) item).contains(getString(R.string.error_fragment))) {
                     Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
@@ -457,7 +466,6 @@ public class MainFragment extends BrowseSupportFragment {
                 startBackgroundTimer();
             }
             if (item instanceof String){
-
                 System.out.println(item);
             }
         }

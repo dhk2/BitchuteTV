@@ -16,6 +16,7 @@ public class MasterData {
     VideoRepository vr;
     List trendingHashtags;
     List followingHashtags;
+    Boolean upToDate;
 
     public MasterData (Application application, Context context){
         allWebVideos = new ArrayList<WebVideo>();
@@ -27,10 +28,18 @@ public class MasterData {
         System.out.println(" size of datg abase"+ allWebVideos.size());
         trendingHashtags=new ArrayList<String>();
         followingHashtags =new ArrayList<String>();
-        followingHashtags.add((String) "#maga");
+        upToDate=false;
+       // followingHashtags.add((String) "#anime");
 
     }
     public Context getContext(){return this.context;}
     public Application getApplication(){return this.application;}
 
+    public Boolean isUpToDate() {
+        return upToDate;
+    }
+
+    public void setUpToDate(Boolean upToDate) {
+        this.upToDate = upToDate;
+    }
 }
