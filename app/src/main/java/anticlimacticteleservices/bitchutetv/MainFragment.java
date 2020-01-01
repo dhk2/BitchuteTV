@@ -69,7 +69,6 @@ public class MainFragment extends BrowseSupportFragment {
     private static final int GRID_ITEM_HEIGHT = 200;
     private static final int NUM_ROWS = 4;
     private static final int NUM_COLS = 80;
-
     private final Handler mHandler = new Handler();
     private Drawable mDefaultBackground;
     private DisplayMetrics mMetrics;
@@ -82,7 +81,6 @@ public class MainFragment extends BrowseSupportFragment {
     private List history ;
     private List favorites;
     private ArrayList<WebVideo> allVideos;
-   //private boolean upToDate=false;
     private boolean rowsSetup=false;
     private VideoViewModel vvm;
     private ChannelViewModel cvm;
@@ -101,8 +99,6 @@ public class MainFragment extends BrowseSupportFragment {
         history= new ArrayList<WebVideo>();
         favorites = new ArrayList<WebVideo>();
         suggested = new ArrayList<Channel>();
-
-
         vvm =   ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
         allVideos=(ArrayList)vvm.getDeadVideos();
@@ -127,11 +123,12 @@ public class MainFragment extends BrowseSupportFragment {
                     if (v.isWatched()) {history.add(v);}
                 }
                 Collections.sort(popular);
-
                 if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
-                    loadRows();
-                    rowsSetup=true;
+                    if (allVideos.size()>0) {
+                        loadRows();
+                        rowsSetup = true;
+                    }
                     MainActivity.data.setUpToDate(true);
                 }
                 else {
@@ -139,13 +136,11 @@ public class MainFragment extends BrowseSupportFragment {
                 }
             }
         });
-
         cvm.getAllChannels().observe(this, new Observer<List<Channel>>(){
             @Override
             public void onChanged(List<Channel> channels) {
                 if (debug) System.out.println("something changed in the channel data "+channels.size());
                 allChannels = (ArrayList)channels;
-
                 suggested = new ArrayList<Channel>();
                 for (Channel c:channels){
                     if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
@@ -179,14 +174,11 @@ public class MainFragment extends BrowseSupportFragment {
             System.out.println(("failed, no hashtags available"));
         }
         prepareBackgroundManager();
-
         setupUIElements();
-
         setupEventListeners();
         trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
         loadRows();
     }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -195,7 +187,6 @@ public class MainFragment extends BrowseSupportFragment {
          loadRows();
        }
     }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -204,7 +195,6 @@ public class MainFragment extends BrowseSupportFragment {
             mBackgroundTimer.cancel();
         }
     }
-
     private void loadRows() {
         ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
@@ -213,7 +203,6 @@ public class MainFragment extends BrowseSupportFragment {
         if (allVideos == null  || allVideos.size()<1){
             return;
         }
-
         if (popular.size()>0) {
             for (Object v : popular) {
                 listRowAdapter.add(v);
@@ -247,6 +236,32 @@ public class MainFragment extends BrowseSupportFragment {
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             headerID++;
         }
+        if (suggested.size()>0) {
+            for (int j = 0; j < suggested.size(); j++) {
+                listRowAdapter.add(suggested.get(j));
+            }
+            HeaderItem header = new HeaderItem(headerID, "Suggested Channels");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        for ( Category c : Bitchute.getCategories()){
+            if (c.isFollowing()){
+                System.out.println("handling category "+c.getName());
+                for (WebVideo v:allVideos){
+                    if (v.getCategory().equals(c.getName())){
+                        listRowAdapter.add(v);
+                        System.out.println("found a category match");
+                    }
+                }
+                HeaderItem header = new HeaderItem(headerID,c.getName() );
+                rowsAdapter.add(new ListRow(header, listRowAdapter));
+                headerID++;
+            }
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        }
         if (MainActivity.data.followingHashtags.size()>0) {
             Log.d("MF-Loadrow","checking hashtags");
             for (Object g : MainActivity.data.followingHashtags) {
@@ -268,16 +283,7 @@ public class MainFragment extends BrowseSupportFragment {
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-        if (suggested.size()>0) {
-            for (int j = 0; j < suggested.size(); j++) {
-                listRowAdapter.add(suggested.get(j));
-            }
-            HeaderItem header = new HeaderItem(headerID, "Suggested Channels");
-            rowsAdapter.add(new ListRow(header, listRowAdapter));
-            cardPresenter = new CardPresenter();
-            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
-            headerID++;
-        }
+
         if ((trendingHashtags != null) && (trendingHashtags.size()>0)) {
             HeaderItem gridHeader = new HeaderItem(headerID, "Trending Hashtags");
             GridItemPresenter mGridPresenter = new GridItemPresenter();
@@ -293,7 +299,17 @@ public class MainFragment extends BrowseSupportFragment {
                 rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
                 headerID++;
             }
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
+        HeaderItem gridHeader = new HeaderItem(headerID, "Categories");
+        GridItemPresenter mGridPresenter = new GridItemPresenter();
+        ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+        for (Category c :Bitchute.getCategories()){
+            gridRowAdapter.add(c.getName());
+        }
+        rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+        headerID++;
         if (allVideos.size()>0) {
             for (Object v : allVideos) {
                 listRowAdapter.add(v);
@@ -305,9 +321,9 @@ public class MainFragment extends BrowseSupportFragment {
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             headerID++;
             setAdapter(rowsAdapter);
-            HeaderItem gridHeader = new HeaderItem(headerID, "PREFERENCES");
-            GridItemPresenter mGridPresenter = new GridItemPresenter();
-            ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+            gridHeader = new HeaderItem(headerID, "PREFERENCES");
+            mGridPresenter = new GridItemPresenter();
+            gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
             // gridRowAdapter.add(getResources().getString(R.string.grid_view));
             //  gridRowAdapter.add(getString(R.string.error_fragment));
             gridRowAdapter.add("Refresh");
@@ -351,7 +367,7 @@ public class MainFragment extends BrowseSupportFragment {
 
             @Override
             public void onClick(View view) {
-                Toast.makeText(getActivity(), "Implement your own in-app search", Toast.LENGTH_LONG)
+                Toast.makeText(getActivity(), "Trying to develop a better search than bitchute, check back later", Toast.LENGTH_LONG)
                         .show();
             }
         });
@@ -398,7 +414,8 @@ public class MainFragment extends BrowseSupportFragment {
                         DetailsActivity.SHARED_ELEMENT_NAME)
                         .toBundle();
                 getActivity().startActivity(intent, bundle);
-            } else if (item instanceof String) {
+            }
+            else if (item instanceof String) {
                 String g = (String) item;
                 if (item.equals("Authenticate")) {
                     final Dialog dialog = new Dialog((Context) getActivity());
@@ -434,8 +451,15 @@ public class MainFragment extends BrowseSupportFragment {
                 } else {
                     Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT).show();
                 }
-
-            } else if (item instanceof Channel) {
+                for (Category c: Bitchute.getCategories()){
+                    if (g.equals(c.getName())){
+                        c.setFollowing(true);
+                        new Bitchute.GetWebVideos().execute(c.getUrl());
+                        rowsSetup=false;
+                    }
+                }
+            }
+            else if (item instanceof Channel) {
 
                 Channel channel = (Channel) item;
                 System.out.println("someone clicked on channel "+channel.toCompactString());

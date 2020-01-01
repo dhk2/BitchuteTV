@@ -40,4 +40,12 @@ public class Category implements Serializable {
     public void setUrl(String url) {
         this.url = url;
     }
+
+    public boolean isFollowing() {
+        return following;
+    }
+
+    public void setFollowing(boolean following) {
+        this.following = following;
+    }
 }
