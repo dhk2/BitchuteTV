@@ -326,13 +326,13 @@ public class MainFragment extends BrowseSupportFragment {
             gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
             // gridRowAdapter.add(getResources().getString(R.string.grid_view));
             //  gridRowAdapter.add(getString(R.string.error_fragment));
-            gridRowAdapter.add("Refresh");
-            gridRowAdapter.add("Authenticate");
-            gridRowAdapter.add(("Import"));
-            rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
-            headerID++;
+           // gridRowAdapter.add("Refresh");
+           // gridRowAdapter.add("Authenticate");
+           // gridRowAdapter.add(("Import"));
+         //   rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+          //  headerID++;
             setAdapter(rowsAdapter);
-            rowsSetup = true;
+            //rowsSetup = true;
             MainActivity.data.setUpToDate(true);
         }
         else {
