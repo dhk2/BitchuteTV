@@ -10,6 +10,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,7 +32,7 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
             Document doc;
             ArrayList <WebVideo> allWebVideos = vr.getDeadWebVideos();
             System.out.println("dead videos "+allWebVideos.size());
-            debug=true;
+            debug=false;
             Log.d("fvs-start",video.toCompactString());
             try {
                 doc = Jsoup.connect(nv.getBitchuteUrl()).get();
@@ -39,6 +42,26 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
                 nv.setMagnet(doc.getElementsByClass("video-actions").first().getElementsByAttribute("href").first().attr("href"));
                 nv.setMp4(doc.getElementsByTag("source").attr("src"));
                 nv.setHackDateString(doc.getElementsByClass("Video-publish-date").first().text());
+                String h1 = nv.getHackDateString();
+                String h2=h1.substring(19,28);
+                String h3 = h1.substring(32);
+                h3 = h3.substring(0,h3.length()-1);
+                System.out.println(h1+":"+h2+":"+h3);
+                //SimpleDateFormat when=new SimpleDateFormat("MMM d Y");
+                        //new SimpleDateFormat("M d  , Y HH:MM z");
+              //  "January 4th, 2020T00:59 UTC"
+                     //   "M dth, YTHH:MM z"
+                try {
+                   // Date past = when.parse(h3+" "+h2);
+                    Date past = new SimpleDateFormat("MMM dd',' yyyyHH:mm zzz")
+                            .parse((h3+h2).replaceAll("(?<=\\d)(st|nd|rd|th)", ""));
+
+                   // System.out.println(when.toString()+" ><  "+past);
+                    nv.setDate(past);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
                 nv.setLastScrape(new Date().getTime());
                 System.out.println("base data scraped");
 

@@ -359,7 +359,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             bits = bits+ " errors:"+errors;
 
         return("["+ID+"] ("+authorSourceID+")"+ author +":"+title + "\n" +
-                "thumbnail:"+thumbnailurl+" hash tags:"+hashtags+" category"+category+
+               // "thumbnail:"+thumbnailurl+" hash tags:"+hashtags+" category:"+category+" author source id:"+authorSourceID+
+               "date :"+date+" date hack:"+hackDateString+"\n"+
                 "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+bits);
     }
 
@@ -370,8 +371,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     @Override
     public int compareTo(WebVideo candidate)
     {
-        return (this.getDate()>(candidate.getDate())  ? -1 :
-                this.getDate()==(candidate.getDate()) ? 0 : 1);
+        return (this.date>(candidate.getDate())  ? -1 :
+                this.date==(candidate.getDate()) ? 0 : 1);
     }
 
     public boolean isBitchute(){        return (this.bitchuteID.length() > 0);    }
@@ -523,7 +524,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
        // System.out.println("getting related videos \n "+relatedVideos);
         ArrayList array = new ArrayList<String>();
         if (null==relatedVideos || relatedVideos==""){
-            System.out.println("no related videos for "+toCompactString());
+           // System.out.println("no related videos for "+toCompactString());
             return array;
 
         }
@@ -554,7 +555,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 this.relatedVideos = relatedVideos + video + "\n";
             }
 
-            System.out.println("Adding related videos to " + this.sourceID + " adding " + video);
+          //  System.out.println("Adding related videos to " + this.sourceID + " adding " + video);
         }
     }
 
@@ -583,6 +584,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             this.author=newer.getAuthor();
             updated=true;
         }
+        /* shouldn't be possible
         if (newer.getAuthorID()>0){
             if (this.authorID<1){
                 this.authorID=newer.getAuthorID();
@@ -592,22 +594,33 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 Log.d("WebVideo-smartupdate","mismatched authorID "+this.authorID+"!="+newer.getAuthorID());
             }
         }
+
+         */
+        if (newer.getDate()>0){
+            if (this.date<1){
+                this.date=newer.getDate();
+                updated = true;
+            }
+            if (newer.getDate() != date){
+                Log.d("WebVideo-smartupdate","mismatched dates "+this.date+"!="+newer.getDate());
+            }
+        }
         if (!newer.getAuthorSourceID().isEmpty()){
             if (this.authorSourceID.isEmpty()){
                 updated=true;
                 this.authorSourceID = newer.getAuthorSourceID();
             }
-            if (newer.getAuthorSourceID() != this.authorSourceID){
+            if (!newer.getAuthorSourceID().equals(this.authorSourceID)){
                 Log.d("WebVideo-smartupdate","mismatched authorSourceID "+this.authorSourceID+"!="+newer.getAuthorSourceID());
             }
         }
         if (!newer.getRelatedVideos().isEmpty()){
-            if (this.relatedVideos.isEmpty()){
+            if (this.relatedVideos == null || relatedVideos.isEmpty()){
                 this.relatedVideos = newer.getRelatedVideos();
                 updated = true;
             }
             if (!newer.getRelatedVideos().equals(relatedVideos)){
-                Log.d("WebVideo-smartupdate","mismatched related videoss "+relatedVideos+"!="+newer.getRelatedVideos());
+                Log.d("WebVideo-smartupdate","mismatched related videos "+relatedVideos+"!="+newer.getRelatedVideos());
             }
         }
         if (!newer.getMp4().isEmpty()){
@@ -633,21 +646,22 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 this.hashtags = newer.getHashtags();
                 updated = true;
             }
-            if (!newer.getThumbnail().equals(this.thumbnailurl)){
-                Log.d("WebVideo-smartupdate","mismatched hashtags "+thumbnailurl+"!="+newer.getThumbnail());
+            if (!newer.getHashtags().equals(this.hashtags)){
+                Log.d("WebVideo-smartupdate","mismatched hashtags "+hashtags+"!="+newer.getHashtags());
             }
         }
         if (!newer.getTitle().isEmpty()){
             if (this.title.isEmpty()){
-                this.title = newer.getMp4();
+                this.title = newer.getTitle();
                 updated = true;
             }
             if (!newer.getTitle().equals(this.title)){
                 Log.d("WebVideo-smartupdate","mismatched title "+title+"!="+newer.getTitle());
+                this.title=newer.getTitle();
             }
         }
         if (!newer.getCategory().isEmpty()){
-            if (this.category.isEmpty()){
+            if (this.category.isEmpty() || this.category.equals("popular") || this.category.equals("trending")){
                 this.category = newer.getCategory();
                 updated = true;
             }
@@ -675,7 +689,11 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 Log.d("WebVideo-smartupdate","mismatched magnet "+magnet+"!="+newer.getMagnet());
             }
         }
+        if (updated){
+            if (category=="popular" || category =="trending")
+                category="";
 
+        }
         return updated;
     }
 }

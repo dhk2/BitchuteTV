@@ -92,7 +92,7 @@ public class MainFragment extends BrowseSupportFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        debug=true;
+        debug=false;
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
@@ -123,11 +123,25 @@ public class MainFragment extends BrowseSupportFragment {
                     if (v.isWatched()) {history.add(v);}
                 }
                 Collections.sort(popular);
+                for (Channel c:allChannels){
+                    if (c.isSubscribed()){
+                       //System.out.println("Subscribed to "+c.getSourceID());
+                        //System.out.println(allVideos.size());
+                        for (WebVideo v: allVideos){
+                            //if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
+                            if (v.getAuthorSourceID().equals(c.getSourceID())){
+                                subscriptions.add(v);
+                            }
+                        }
+                    }
+                }
+                Collections.sort(subscriptions);
                 if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
                     if (allVideos.size()>0) {
-                        loadRows();
-                        rowsSetup = true;
+                        //loadRows();
+                        //rowsSetup = true;
+
                     }
                     MainActivity.data.setUpToDate(true);
                 }
@@ -173,11 +187,24 @@ public class MainFragment extends BrowseSupportFragment {
         else {
             System.out.println(("failed, no hashtags available"));
         }
+        for (Channel c:allChannels){
+            if (c.isSubscribed()){
+                for (WebVideo v: allVideos){
+                    if (v.getAuthorSourceID()==c.getSourceID()){
+                        subscriptions.add(v);
+                        if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
+
+                    }
+                }
+            }
+        }
+        Collections.sort(subscriptions);
         prepareBackgroundManager();
         setupUIElements();
         setupEventListeners();
         trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
         loadRows();
+        new CheckForUpdates().execute();
     }
     @Override
     public void onStart() {
@@ -202,6 +229,17 @@ public class MainFragment extends BrowseSupportFragment {
         int headerID=0;
         if (allVideos == null  || allVideos.size()<1){
             return;
+        }
+        if (subscriptions.size()>0) {
+            for (Object v : subscriptions) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "Subscribed videos");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            //rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
         }
         if (popular.size()>0) {
             for (Object v : popular) {

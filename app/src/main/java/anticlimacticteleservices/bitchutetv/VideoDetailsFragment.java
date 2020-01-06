@@ -112,17 +112,34 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                     System.out.println("waiting for update:" + waitingForUpdate);
                     if (true) {
                         if (!mSelectedWebVideo.getMp4().isEmpty()) {
+                            System.out.println(mAdapter.size()+" "+mAdapter.get(0).toString());
+                            /*
                             mAdapter.clear();
                             setupDetailsOverviewRow();
                             setupDetailsOverviewRowPresenter();
                             setAdapter(mAdapter);
                             initializeBackground(mSelectedWebVideo);
                             setupRelatedMovieListRow();
+
+                             */
+                            mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                             waitingForUpdate = false;
                         } else {
                             System.out.println("not updating display view because we still dont have a n mp4");
                         }
                     }
+                }
+                if (mSelectedChannel!=null){
+                   /* mPresenterSelector = new ClassPresenterSelector();
+                    mAdapter = new ArrayObjectAdapter(mPresenterSelector);
+                    setupDetailsOverviewRow();
+                    setupDetailsOverviewRowPresenter();
+                    setAdapter(mAdapter);
+                    initializeBackground(mSelectedChannel);
+                    setupRelatedMovieListRow();
+
+                    */
+                    mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                 }
             }
         });
@@ -132,6 +149,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             public void onChanged(List<Channel> channels) {
                 System.out.println("something changed in the channel data "+channels.size());
                 allChannels = (ArrayList)channels;
+
             }
         });
         allChannels=(ArrayList)cvm.getDeadChannels();
@@ -335,8 +353,16 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                     }
                     else{
                         mSelectedChannel.setSubscribed(true);
+                       // new ForeGroundChannelScrape().execute(mSelectedChannel);
                     }
                     cvm.update(mSelectedChannel);
+                    mPresenterSelector = new ClassPresenterSelector();
+                    mAdapter = new ArrayObjectAdapter(mPresenterSelector);
+                    setupDetailsOverviewRow();
+                    setupDetailsOverviewRowPresenter();
+                    setAdapter(mAdapter);
+                    initializeBackground(mSelectedChannel);
+                    setupRelatedMovieListRow();
                     System.out.println(mSelectedChannel.toDebugString());
                 }
                 if (action.getId() == ACTION_WATCH) {
@@ -354,7 +380,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 if (action.getId() == ACTION_GOTO_CHANNEL){
                     Channel targetChannel=null;
                     for (Channel c : allChannels){
-                        System.out.println(mSelectedWebVideo.getAuthorSourceID()+" = "+c.getSourceID());
+                      //  System.out.println(mSelectedWebVideo.getAuthorSourceID()+" = "+c.getSourceID());
                         if (c.getSourceID().equals(mSelectedWebVideo.getAuthorSourceID())){
                             targetChannel = c;
                             System.out.println("found channel "+targetChannel.toDebugString());
@@ -406,13 +432,17 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             }
         }
         if (mSelectedChannel !=null){
+            subcategories[0] = "videos";
             for (WebVideo v : allVideos){
                 if (v.getAuthorSourceID().equals(mSelectedChannel.getSourceID())){
                     list.add(v);
                 }
             }
+            if (list.size()==0){
+                list=null;
+            }
         }
-        if (null != list) {
+        if (null != list ) {
             Collections.shuffle(list);
             System.out.println("setting " + list.size() + " objects");
             CardPresenter bob = new CardPresenter();
@@ -421,6 +451,10 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 listRowAdapter.add(list.get(j));
             }
             HeaderItem header = new HeaderItem(0, subcategories[0]);
+            //System.out.println ("<<<<<<<<<<<<<<<<<<<<<<<<<< "+mAdapter.size()+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            //mAdapter.remove(0);
+            //System.out.println ("<<<<<<<<<<<<<<<<<<<<<<<<<< "+mPresenterSelector.+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
         }

@@ -113,7 +113,7 @@ public class Bitchute {
                 Date pd = new Date();
                 nv.setHackDateString(r.getElementsByClass("video-card-published").first().text());
                 Elements author  = r.getElementsByClass("video-card-channel");
-                System.out.println(author.size()+" athour element:"+author);
+                //System.out.println(author.size()+" athour element:"+author);
                 // Some video cards appear to lack author information
                 if ((author != null) && (author.first() != null)){
                     nv.setAuthor(author.first().text());
@@ -311,28 +311,28 @@ public class Bitchute {
                     if (!vr.exists(v.getSourceID())){
 
                         vr.insert(v);
-                        System.out.println("BH VR inserting "+v.toCompactString());
+                       // System.out.println("BH VR inserting "+v.toCompactString());
                     }
                     else{
-                        System.out.println( "BH VR not inserting "+v.toCompactString());
+                       // System.out.println( "BH VR not inserting "+v.toCompactString());
                     }
 
                 }
                 for (Channel c : foundChannels){
-                    System.out.println("Attempting to add channel "+c.getSourceID()+" "+c.getTitle());
+                    //System.out.println("Attempting to add channel "+c.getSourceID()+" "+c.getTitle());
                     c.setYoutubeID("suggested");
                     if (!cr.exists(c.getSourceID())){
-                        System.out.println("adding new channel "+c.toDebugString());
+                     //   System.out.println("adding new channel "+c.toDebugString());
                         cr.insert(c);
                     }
                     else {
                         //TODO determine if there is a use case where this update would be informative.
-                       System.out.println("Updating scraped channel"+c.toCompactString());
+                      // System.out.println("Updating scraped channel"+c.toCompactString());
                        for (Channel inception : cr.getDeadChannels()){
-                           System.out.println("["+inception.getSourceID()+"] == ["+c.getSourceID()+"]");
+                          // System.out.println("["+inception.getSourceID()+"] == ["+c.getSourceID()+"]");
                            if (inception.getSourceID().equals(c.getSourceID())){
                                inception.setYoutubeID("suggested");
-                               System.out.println("this is the channel being updated "+c.toDebugString());
+                              // System.out.println("this is the channel being updated "+c.toDebugString());
                                cr.update(inception);
                            }
                        }

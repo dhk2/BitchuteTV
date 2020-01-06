@@ -39,7 +39,7 @@ public class ChannelRepository {
         @Override
         protected Void doInBackground(Channel... channels){
             channelDao.insert(channels[0]);
-            System.out.println("VR inserting channel "+channels[0].toDebugString());
+            //System.out.println("VR inserting channel "+channels[0].toDebugString());
             return null;
         }
     }
@@ -68,7 +68,7 @@ public class ChannelRepository {
         @Override
         protected Void doInBackground(Channel... channels){
             channelDao.update(channels[0]);
-            System.out.println("VR updating channel "+channels[0].toDebugString());
+           // System.out.println("VR updating channel "+channels[0].toDebugString());
             return null;
         }
 
