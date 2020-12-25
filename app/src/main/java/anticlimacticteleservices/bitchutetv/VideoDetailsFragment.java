@@ -108,12 +108,12 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
 
                 if (mSelectedWebVideo != null) {
 
-                    System.out.println("something changed, currently displaying " + mSelectedWebVideo.toCompactString());
+                    System.out.println("something changed, currently displaying " + mSelectedWebVideo.toDebugString());
                     System.out.println("waiting for update:" + waitingForUpdate);
                     if (true) {
                         if (!mSelectedWebVideo.getMp4().isEmpty()) {
                             System.out.println(mAdapter.size()+" "+mAdapter.get(0).toString());
-                            /*
+
                             mAdapter.clear();
                             setupDetailsOverviewRow();
                             setupDetailsOverviewRowPresenter();
@@ -121,7 +121,7 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                             initializeBackground(mSelectedWebVideo);
                             setupRelatedMovieListRow();
 
-                             */
+
                             mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                             waitingForUpdate = false;
                         } else {

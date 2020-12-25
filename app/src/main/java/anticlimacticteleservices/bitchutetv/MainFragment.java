@@ -92,7 +92,7 @@ public class MainFragment extends BrowseSupportFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        debug=false;
+        debug=true;
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
