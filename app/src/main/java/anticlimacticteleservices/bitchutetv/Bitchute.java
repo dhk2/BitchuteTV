@@ -21,6 +21,7 @@ public class Bitchute {
         String target="";
         String type="";
         Document doc;
+        String TAG = "BitChute";
         ArrayList <WebVideo> foundVideos;
         @Override
         protected String doInBackground(String... strings) {
@@ -45,11 +46,11 @@ public class Bitchute {
                     }
                 }
             }
+            Log.d(TAG,"type:("+type+") target:("+target+")");
             try {
                 doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
-
                 foundVideos= (ArrayList) getVideos(doc);
-                System.out.println("found "+foundVideos.size()+" Videos looking for "+type+" "+target);
+                Log.d(TAG,"found "+foundVideos.size()+" Videos looking for "+type+" "+target+ " at "+rl);
                 if (type.equals("category")){
                     for (WebVideo v : foundVideos){
                         v.setCategory(target);
@@ -57,6 +58,9 @@ public class Bitchute {
                 }
 
                 if (type.equals("hashtag")){
+
+                    doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
+                    foundVideos= (ArrayList) getVideos(doc);
                     System.out.println("setting hashtags on videos for hashtag #"+target);
                     for (WebVideo v : foundVideos){
                         if (!v.getHashtags().contains(target)){
@@ -171,7 +175,30 @@ public class Bitchute {
                 }
                 foundWebVideos.add(nv);
             }
-
+            results = doc.getElementsByClass("video-result-container");
+            Log.e("wtf", String.valueOf(results.size()));
+            for (Element r : results) {
+                //  System.out.println("\n\n"+ r);
+                nv = new WebVideo("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href"));
+                //nv.setAuthorID(-1l);
+                nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
+                nv.setViewCount(r.getElementsByClass("video-views").first().text());
+                nv.setTitle(r.getElementsByClass("video-result-title").first().text());
+                nv.setAuthor(r.getElementsByClass("video-result-channel").first().text());
+                nv.setHackDateString(r.getElementsByClass("video-result-details").first().text());
+                nv.setDescription(r.getElementsByClass("video-result-text").first().text());
+                String ugly = r.getElementsByClass("video-result-channel").first().toString();
+                ugly = ugly.substring(ugly.indexOf("/")+1);
+                ugly = ugly.substring(ugly.indexOf("/")+1);
+                ugly = ugly.substring(0,ugly.indexOf("/"));
+                nv.setAuthorSourceID(ugly);
+                //System.out.println(r.getElementsByClass("video-duration").first().text());
+                if (nv.getCategory().isEmpty()){
+                    nv.setCategory("trending");
+                }
+                Log.e("WTF",nv.toDebugString());
+                foundWebVideos.add(nv);
+            }
         }
         Log.v("bitchute-class", (Integer.toString(foundWebVideos.size())) + "Videos found");
         return foundWebVideos;
@@ -205,7 +232,7 @@ public class Bitchute {
 
     public static List getHashtags(Document doc) {
         List<String> foundHashtags = new ArrayList<String>();
-        System.out.println("looking for hastags");
+        System.out.println("looking for hashtags");
         try {
             Element temp = doc.getElementsByClass("list-inline list-unstyled").first();
             System.out.println(temp);

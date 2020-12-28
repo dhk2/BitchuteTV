@@ -692,8 +692,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         if (updated){
             if (category=="popular" || category =="trending")
                 category="";
-
         }
+        Log.d("wtf",this.toDebugString());
         return updated;
     }
 }

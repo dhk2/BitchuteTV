@@ -131,6 +131,7 @@ public class MainFragment extends BrowseSupportFragment {
                             //if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
                             if (v.getAuthorSourceID().equals(c.getSourceID())){
                                 subscriptions.add(v);
+                                System.out.println("Adding "+v.getTitle()+" to subscribed video list");
                             }
                         }
                     }
@@ -139,8 +140,8 @@ public class MainFragment extends BrowseSupportFragment {
                 if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
                     if (allVideos.size()>0) {
-                        //loadRows();
-                        //rowsSetup = true;
+                        loadRows();
+                        rowsSetup = true;
 
                     }
                     MainActivity.data.setUpToDate(true);
@@ -191,6 +192,7 @@ public class MainFragment extends BrowseSupportFragment {
             if (c.isSubscribed()){
                 for (WebVideo v: allVideos){
                     if (v.getAuthorSourceID()==c.getSourceID()){
+                        System.out.println("Adding "+v.getTitle()+" to subscribed video list");
                         subscriptions.add(v);
                         if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
 
