@@ -195,7 +195,7 @@ class Channel implements Serializable{
     public String toDebugString(){
         return("title:"+this.title+"\n"+
                 "id:"+ID+" "+this.title+"("+url +")\n"+
-                "youtubeid:"+youtubeID+" BitchuteID:"+bitchuteID+" Last Sync:"+new Date(lastsync)+" thumbnail"+this.thumbnailurl+"\n"+
+                "sourceID:"+this.sourceID +" youtubeid:"+youtubeID+" BitchuteID:"+bitchuteID+" Last Sync:"+new Date(lastsync)+" thumbnail"+this.thumbnailurl+"\n"+
                 "Description:"+description);
     }
 

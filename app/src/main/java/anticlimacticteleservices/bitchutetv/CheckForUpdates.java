@@ -60,7 +60,7 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
     long channelUpdateInterval;
     int tooEarly=0;
     int tooOld=0;
-
+    String TAG = "CFU";
     public static SharedPreferences preferences;
     @Override
     protected void onPreExecute() {
@@ -139,12 +139,13 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
 
 channelloop:for (Channel chan :allChannels){
             if (chan.isSubscribed()) {
-                System.out.println("Checking "+chan.getTitle()+" for new videos");
+                Log.d(TAG,"Checking "+chan.getTitle()+" to see if it's time to sync");
                 Long diff = new Date().getTime() - chan.getLastsync();
                 //TODO implement variable refresh rate by channel here
                 if ((diff > 30 * 60 * 1000) || forceRefresh) {
                     Log.v("Channel-Update", "Checking " + chan.getAuthor() + " for new videos since " + String.valueOf(diff / 1000) + " seconds ago");
                     chan.setLastsync(new Date());
+                    Log.d(TAG,chan.toDebugString());
                     channelDao.update(chan);
                     try {
                         doc = Jsoup.connect(chan.getBitchuteRssFeedUrl()).get();
@@ -199,19 +200,22 @@ channelloop:for (Channel chan :allChannels){
                             //      createNotification(nv);
                             //  }
                         } else {
+                            // this just seems to cause database corruption
                             WebVideo original = matches.get(0);
-                            System.out.println("original:\n"+original.toCompactString()+" \n proposed:\n"+nv.toCompactString()+"\n");
-                            if (original.smartUpdate(nv)) {
-                                videoDao.update(original);
-                                updatecount++;
-                            } else {
+                            System.out.println("original:\n"+original.toCompactString()+" \n fresh:\n"+nv.toCompactString()+"\n");
+                            //if (original.smartUpdate(nv)) {
+                            //    videoDao.update(original);
+                            //    updatecount++;
+                            //} else {
                                 dupecount++;
-                            }
+                            //}
                         }
                     }
                 } else {
                     tooEarly++;
+                    Log.d(TAG,"too early, synched "+diff/1000+" seconds ago");
                 }
+
             }
         }
         for (WebVideo v : allWebVideos) {

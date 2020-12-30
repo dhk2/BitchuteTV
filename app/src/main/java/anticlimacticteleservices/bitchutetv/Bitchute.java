@@ -208,19 +208,17 @@ public class Bitchute {
         ArrayList<Channel> foundChannels = new ArrayList<Channel>();
         try {
             Elements results = doc.getElementsByClass("channel-card");
-            //System.out.println(results.first().text());
-           // System.out.println(results.text());
-           // System.out.println(results);
+            Log.d("wtf","pulled "+results.size()+" suggested channels");
             for (Element r : results) {
                 Channel nc = new Channel(("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href")));
-                nc.setThumbnailurl(r.getElementsByAttribute("data-src").last().attr("data-src"));
+                nc.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src"));
                 nc.setThumbnail(nc.getThumbnailurl());
                 nc.setAuthor(r.text());
                 nc.setTitle(r.text());
                 //System.out.println(nc.toCompactString());
                 foundChannels.add(nc);
             }
-
+            Log.d("wtf rdux","found "+foundChannels.size()+" suggested channels");
         } catch (NullPointerException e) {
             Log.e("get-channels-doc", "Null pointer exception 2" + e.getMessage());
             //System.out.println(doc);
@@ -325,13 +323,16 @@ public class Bitchute {
         @Override
         protected String doInBackground(String... params) {
             try {
-                doc = Jsoup.connect("https://www.bitchute.com").get();
+                doc = Jsoup.connect("https://www.bitchute.com/#listing-popular").get();
                 System.out.println("loaded bitchute home page");
                 ArrayList<WebVideo> foundWebVideos = getVideos(doc);
                 System.out.println("loaded homepage videos "+foundWebVideos.size());
                 List<Channel> foundChannels = getChannels(doc);
                 System.out.println("loaded home page channels "+foundChannels.size());
                 List<String> foundHashtags = getHashtags(doc);
+                for (String t:foundHashtags){
+                    MainActivity.data.addTrendingHashtag(t);
+                }
                 System.out.println("found hashtags "+foundHashtags);
                 for (WebVideo v: foundWebVideos){
                     System.out.println("Attempting to add video "+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
@@ -365,7 +366,7 @@ public class Bitchute {
                        }
                     }
                 }
-                MainActivity.data.trendingHashtags=foundHashtags;
+                //MainActivity.data.trendingHashtags=foundHashtags;
             } catch (MalformedURLException e) {
                 Log.e("Bitchute-Home", "Malformed URL: " + e.getMessage());
                 error = e.getMessage();
