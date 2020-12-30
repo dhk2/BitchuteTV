@@ -44,6 +44,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -54,6 +55,11 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,22 +92,28 @@ public class MainFragment extends BrowseSupportFragment {
     private ChannelViewModel cvm;
     private ArrayList <Channel> allChannels;
     private ArrayList <Channel> suggested;
+    private ArrayList <Channel> subs;
     private ArrayList <String> trendingHashtags;
     private ArrayList <String> followingHashtags;
+    private ArrayList <String> followingCategories;
     private boolean debug;
+    Dialog dialogHandle;
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        debug=true;
+        debug=false;
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
         history= new ArrayList<WebVideo>();
         favorites = new ArrayList<WebVideo>();
         suggested = new ArrayList<Channel>();
+        subs = new ArrayList<Channel>();
         vvm =   ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
         allVideos=(ArrayList)vvm.getDeadVideos();
+        new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         if (debug) System.out.println(("view model attached successfully"));
         vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
@@ -115,34 +127,25 @@ public class MainFragment extends BrowseSupportFragment {
                 subscriptions = new ArrayList<WebVideo>();
                 history= new ArrayList<WebVideo>();
                 favorites = new ArrayList<WebVideo>();
-                trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
-                followingHashtags = (ArrayList)MainActivity .data.followingHashtags;
                 for (WebVideo v: webVideos){
                     if (v.getCategory().equals("popular")) {popular.add(v);}
                     if (v.getCategory().equals("trending")) {trending.add(v);}
                     if (v.isWatched()) {history.add(v);}
-                }
-                Collections.sort(popular);
-                for (Channel c:allChannels){
-                    if (c.isSubscribed()){
-                       //System.out.println("Subscribed to "+c.getSourceID());
-                        //System.out.println(allVideos.size());
-                        for (WebVideo v: allVideos){
-                            //if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
-                            if (v.getAuthorSourceID().equals(c.getSourceID())){
+                    for (Channel c:allChannels){
+                        if (c.isSubscribed() && v.getAuthorSourceID().equals(c.getSourceID())){
                                 subscriptions.add(v);
-                                System.out.println("Adding "+v.getTitle()+" to subscribed video list");
-                            }
+                                Log.d(TAG+"live","Adding "+v.getID()+"("+v.getSourceID()+"):"+v.getTitle()+" to subscribed for "+c.toCompactString());
                         }
                     }
                 }
+                Collections.sort(popular);
+                Collections.sort(trending);
                 Collections.sort(subscriptions);
                 if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
                     if (allVideos.size()>0) {
                         loadRows();
                         rowsSetup = true;
-
                     }
                     MainActivity.data.setUpToDate(true);
                 }
@@ -157,29 +160,44 @@ public class MainFragment extends BrowseSupportFragment {
                 if (debug) System.out.println("something changed in the channel data "+channels.size());
                 allChannels = (ArrayList)channels;
                 suggested = new ArrayList<Channel>();
+                subs=new ArrayList<Channel>();
                 for (Channel c:channels){
                     if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
+                    if (c.isSubscribed()){subs.add(c);}
                 }
             }
         });
         allChannels=(ArrayList)cvm.getDeadChannels();
         for (Channel c:allChannels){
             if (c.getYoutubeID().equals("suggested")) {suggested.add(c);}
+            if (c.isSubscribed()){subs.add(c);}
         }
-        popular = new ArrayList<WebVideo>();
-        trending = new ArrayList<WebVideo>();
-        subscriptions = new ArrayList<WebVideo>();
-        history= new ArrayList<WebVideo>();
-        favorites = new ArrayList<WebVideo>();
-        for (WebVideo v: (ArrayList<WebVideo>) allVideos){
+        //popular = new ArrayList<WebVideo>();
+       // trending = new ArrayList<WebVideo>();
+        //subscriptions = new ArrayList<WebVideo>();
+        //history= new ArrayList<WebVideo>();
+        //favorites = new ArrayList<WebVideo>();
+        for (WebVideo v: allVideos){
             if (v.getCategory().equals("popular")) {popular.add(v);}
             if (v.getCategory().equals("trending")) {trending.add(v);}
             if (v.isWatched()) {history.add(v);}
+            for (Channel c:allChannels){
+                if (c.isSubscribed() && v.getAuthorSourceID().equals(c.getSourceID())){
+                    subscriptions.add(v);
+                    Log.d(TAG+"all","Adding "+v.getID()+":"+v.getTitle()+" to subscribed video list");
+                }
+            }
         }
+        Collections.sort(popular);
+        Collections.sort(trending);
+        Collections.sort(subscriptions);
+        trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
+        followingHashtags = (ArrayList)MainActivity .data.followingHashtags;
+        followingCategories = (ArrayList)MainActivity.data.followingCategories;
         System.out.println(popular.size()+" popular videos "+trending.size()+"trending, of total "+allVideos.size());
         super.onActivityCreated(savedInstanceState);
-        new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
-        if ((followingHashtags != null) && (followingHashtags.size()>0)) {
+
+        if (followingHashtags.size()>0) {
             for (String g : followingHashtags) {
                 System.out.println("Getting videos for hashtag "+"/hashtag/" + g.substring(1));
                 new Bitchute.GetWebVideos().execute("/hashtag/" + g.substring(1));
@@ -188,19 +206,6 @@ public class MainFragment extends BrowseSupportFragment {
         else {
             System.out.println(("failed, no hashtags available"));
         }
-        for (Channel c:allChannels){
-            if (c.isSubscribed()){
-                for (WebVideo v: allVideos){
-                    if (v.getAuthorSourceID()==c.getSourceID()){
-                        System.out.println("Adding "+v.getTitle()+" to subscribed video list");
-                        subscriptions.add(v);
-                        if (!v.getAuthorSourceID().isEmpty()){System.out.println("video from "+v.getAuthorSourceID());}
-
-                    }
-                }
-            }
-        }
-        Collections.sort(subscriptions);
         prepareBackgroundManager();
         setupUIElements();
         setupEventListeners();
@@ -247,7 +252,7 @@ public class MainFragment extends BrowseSupportFragment {
             for (Object v : popular) {
                 listRowAdapter.add(v);
             }
-            HeaderItem header = new HeaderItem(headerID, "Popular");
+            HeaderItem header = new HeaderItem(headerID, "Popular Videos");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
             //rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
@@ -258,7 +263,7 @@ public class MainFragment extends BrowseSupportFragment {
             for (Object v : trending) {
                 listRowAdapter.add(v);
             }
-            HeaderItem header = new HeaderItem(headerID, "Trending");
+            HeaderItem header = new HeaderItem(headerID, "Trending Videos");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
            // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             cardPresenter = new CardPresenter();
@@ -269,9 +274,19 @@ public class MainFragment extends BrowseSupportFragment {
             for (Object v : history) {
                 listRowAdapter.add(v);
             }
-            HeaderItem header = new HeaderItem(headerID, "History");
+            HeaderItem header = new HeaderItem(headerID, "Video History");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
            // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (subs.size()>0) {
+            for (int j = 0; j < subs.size(); j++) {
+                listRowAdapter.add(subs.get(j));
+            }
+            HeaderItem header = new HeaderItem(headerID, "Subscribed Channels");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             headerID++;
@@ -302,9 +317,9 @@ public class MainFragment extends BrowseSupportFragment {
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-        if (MainActivity.data.followingHashtags.size()>0) {
+        if (followingHashtags.size()>0) {
             Log.d("MF-Loadrow","checking hashtags");
-            for (Object g : MainActivity.data.followingHashtags) {
+            for (Object g : followingHashtags) {
                 String tag=(String)g;
                 System.out.println("Searching for tag "+tag);
                 for (Object v:allVideos){
@@ -323,7 +338,8 @@ public class MainFragment extends BrowseSupportFragment {
             cardPresenter = new CardPresenter();
             listRowAdapter = new ArrayObjectAdapter(cardPresenter);
         }
-
+        //TODO fix this ugly
+        //trendingHashtags= MainActivity.data.loadTrendingHashtags();
         if ((trendingHashtags != null) && (trendingHashtags.size()>0)) {
             HeaderItem gridHeader = new HeaderItem(headerID, "Trending Hashtags");
             GridItemPresenter mGridPresenter = new GridItemPresenter();
@@ -367,10 +383,17 @@ public class MainFragment extends BrowseSupportFragment {
             // gridRowAdapter.add(getResources().getString(R.string.grid_view));
             //  gridRowAdapter.add(getString(R.string.error_fragment));
            // gridRowAdapter.add("Refresh");
-           // gridRowAdapter.add("Authenticate");
-           // gridRowAdapter.add(("Import"));
-         //   rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
-          //  headerID++;
+            //gridRowAdapter.add("Authenticate");
+
+            if (debug) {
+                gridRowAdapter.add("Videos");
+                gridRowAdapter.add("Channels");
+                gridRowAdapter.add(("Nuke"));
+            }
+            gridRowAdapter.add(("Import"));
+
+            rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+            headerID++;
             setAdapter(rowsAdapter);
             //rowsSetup = true;
             MainActivity.data.setUpToDate(true);
@@ -444,7 +467,7 @@ public class MainFragment extends BrowseSupportFragment {
             System.out.println(row.toString()+"><"+rowViewHolder.toString());
             if (item instanceof WebVideo) {
                 WebVideo webVideo = (WebVideo) item;
-                Log.d(TAG, "Item: " + item.toString());
+                Log.d(TAG, "Item: " + webVideo.toDebugString());
                 System.out.println("meaning to launch" + webVideo.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(DetailsActivity.VIDEO, webVideo);
@@ -457,11 +480,20 @@ public class MainFragment extends BrowseSupportFragment {
             }
             else if (item instanceof String) {
                 String g = (String) item;
-                if (item.equals("Authenticate")) {
-                    final Dialog dialog = new Dialog((Context) getActivity());
+                System.out.println("homeslice clicked on "+g);
+                if (item.equals("Import")) {
+                    final Dialog dialog = new Dialog(getContext());
                     dialog.setContentView(R.layout.importdialog);
+                    dialogHandle=dialog;
                     final WebView webView = dialog.findViewById(R.id.idplayer_window);
-                    webView.setWebViewClient(new WebViewClient());
+                    webView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView view, String url) {
+                            webView.loadUrl("javascript:window.HtmlHandler.handleHtml" +
+                                    "('<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>');");
+                        }
+                    });
+                    webView.addJavascriptInterface(new MyJavaScriptInterface(), "HtmlHandler");
                     WebSettings webSettings = webView.getSettings();
                     webSettings.setJavaScriptEnabled(true);
                     webView.getSettings().setUseWideViewPort(true);
@@ -470,16 +502,30 @@ public class MainFragment extends BrowseSupportFragment {
                     webView.loadUrl("https://www.bitchute.com/subscriptions/");
                     dialog.show();
                 }
-                if (g.equals("Refresh")) {
-                    for (Channel c : allChannels){
-                        System.out.println(c.toCompactString());
+
+                if (g.equals("Videos")) {
+                    for (WebVideo v : vvm.getDeadVideos()){
+                        Log.d("debug",v.toDebugString());
+                    }
+                }
+                if (g.equals("Channels")) {
+                    for (Channel c : cvm.getDeadChannels()){
+                        Log.d("debug",c.toDebugString());
+                    }
+                }
+                if (g.equals("Nuke")) {
+                    for (WebVideo vid : allVideos){
+                        vvm.delete(vid);
+                    }
+                    for (Channel chan :allChannels){
+                        cvm.delete(chan);
                     }
                 }
                 if (g.startsWith("#")){
                     System.out.println("clicked on a hashtag");
                     System.out.println(((String) item).substring(1));
                     MainActivity.data.followingHashtags.add(g);
-                    followingHashtags=(ArrayList) MainActivity.data.followingHashtags;
+                    followingHashtags =(ArrayList) MainActivity.data.followingHashtags;
                     new Bitchute.GetWebVideos().execute("/hashtag/"+g.substring(1));
                     rowsSetup=false;
                 }
@@ -564,6 +610,37 @@ public class MainFragment extends BrowseSupportFragment {
         }
         @Override
         public void onUnbindViewHolder(ViewHolder viewHolder) {
+        }
+    }
+    private class MyJavaScriptInterface {
+        @JavascriptInterface
+        public void handleHtml(String html) {
+            Document doc = Jsoup.parse(html);
+            Log.v("Settings-Import","["+doc.title()+"]");
+            Elements subs = doc.getElementsByClass("subscription-container");
+            for (Element s : subs) {
+                //Log.d(TAG,"subscription info:"+s);
+                Channel chan = new Channel("https://www.bitchute.com"+s.getElementsByTag("a").first().attr("href"));
+                chan.setTitle(s.getElementsByTag("a").first().attr("title"));
+                chan.setThumbnail(s.getElementsByAttribute("data-src").last().attr("data-src"));
+                chan.setDescription(s.getElementsByClass("subscription-description-text").text());
+                Log.d(TAG,"proposed new channel"+chan.toDebugString());
+                for (Channel c:allChannels){
+                    if (c.getBitchuteID().equals(chan.getBitchuteID())){
+                        c.setSubscribed(true);
+                        cvm.update(c);
+                        chan.setBitchuteID("dead");
+                        Log.d(TAG,"channel already exist, subscribed"+c.getTitle());
+                    }
+                }
+                if (!chan.getBitchuteID().equals("dead")){
+                    Log.e(TAG,"no match adding new channel"+chan.toDebugString());
+                    chan.setSubscribed(true);
+                    cvm.insert(chan);
+                }
+            }
+            dialogHandle.dismiss();
+            Toast.makeText(MainActivity.data.context,"adding "+subs.size()+ " possible channels from bitchute.",Toast.LENGTH_SHORT).show();
         }
     }
 }
