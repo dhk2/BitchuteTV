@@ -259,8 +259,6 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
     public void setDate(long date)
     {
-        //System.out.println(date);
-
         this.date = date;
     }
     public void setDate(Date date){
@@ -322,7 +320,6 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 "sourceID:" + sourceID + "\n" +
                 "Hash tags:" + hashtags  + "\n" +
                 "Category:" + category+ "\n");
-
     }
     public String toHtmlString()  {
         return ("title:" + title + "<p>" +
@@ -359,7 +356,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             bits = bits+ " errors:"+errors;
 
         return("["+ID+"] ("+authorSourceID+")"+ author +":"+title + "\n" +
-               // "thumbnail:"+thumbnailurl+" hash tags:"+hashtags+" category:"+category+" author source id:"+authorSourceID+
+                "thumbnail:"+thumbnailurl+" hash tags:"+hashtags+" category:"+category+" author source id:"+authorSourceID+
                "date :"+date+" date hack:"+hackDateString+"\n"+
                 "Source ID:"+sourceID+" B:"+bitchuteID+" Y:"+youtubeID+" mp4:"+mp4+" local:"+localPath+"url:"+url+"\n"+bits);
     }
@@ -521,10 +518,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
 
     public ArrayList <String> getRelatedVideoArray(){
-       // System.out.println("getting related videos \n "+relatedVideos);
         ArrayList array = new ArrayList<String>();
         if (null==relatedVideos || relatedVideos==""){
-           // System.out.println("no related videos for "+toCompactString());
             return array;
 
         }
@@ -532,10 +527,8 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             //todo fix whatever bug is apending a the string 'null' at the start of video source id
             if (g.contains("null")){
                 g=g.substring(4);
-                System.out.println("fixed version "+g);
             }
             array.add(g);
-            //System.out.println("adding "+g+" to array");
         }
         return array;
     }
@@ -554,8 +547,6 @@ class WebVideo implements Serializable,Comparable<WebVideo>
             } else {
                 this.relatedVideos = relatedVideos + video + "\n";
             }
-
-          //  System.out.println("Adding related videos to " + this.sourceID + " adding " + video);
         }
     }
 
@@ -677,7 +668,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
                 updated=true;
             }
             if (!newer.getDescription().equals(this.description)){
-                Log.d("WebVideo-smartupdate","mismatched title "+description+"!="+newer.getDescription());
+                Log.d("WebVideo-smartupdate","mismatched description "+description+"!="+newer.getDescription());
             }
         }
         if (!newer.getMagnet().isEmpty()){

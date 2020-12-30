@@ -104,16 +104,9 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             @Override
             public void onChanged(List<WebVideo> webVideos) {
                 allVideos=(ArrayList)webVideos;
-                System.out.println("something changed in teh data");
-
                 if (mSelectedWebVideo != null) {
-
-                    System.out.println("something changed, currently displaying " + mSelectedWebVideo.toDebugString());
-                    System.out.println("waiting for update:" + waitingForUpdate);
                     if (true) {
                         if (!mSelectedWebVideo.getMp4().isEmpty()) {
-                            System.out.println(mAdapter.size()+" "+mAdapter.get(0).toString());
-
                             mAdapter.clear();
                             setupDetailsOverviewRow();
                             setupDetailsOverviewRowPresenter();
@@ -125,7 +118,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                             mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size());
                             waitingForUpdate = false;
                         } else {
-                            System.out.println("not updating display view because we still dont have a n mp4");
                         }
                     }
                 }
@@ -143,11 +135,9 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 }
             }
         });
-        System.out.println(("vvm completed"));
         cvm.getAllChannels().observe(this, new Observer<List<Channel>>(){
             @Override
             public void onChanged(List<Channel> channels) {
-                System.out.println("something changed in the channel data "+channels.size());
                 allChannels = (ArrayList)channels;
 
             }
@@ -156,19 +146,14 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
 
         mDetailsBackground = new DetailsSupportFragmentBackgroundController(this);
         //looks ugly
-        System.out.println("set backgrojnd controller");
         mSelectedItem = getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
         if (mSelectedItem instanceof WebVideo){
-            System.out.println("it's a video");
             mSelectedWebVideo = (WebVideo) mSelectedItem;
         }
         if (mSelectedItem instanceof Channel){
-            System.out.println("it's a channel");
             mSelectedChannel = (Channel) mSelectedItem;
         }
         if (mSelectedWebVideo != null) {
-            System.out.println("processing video");
-
             if (!mSelectedWebVideo.getAuthorSourceID().isEmpty()) {
                 //
                 Channel chan=null;
@@ -200,7 +185,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             setAdapter(mAdapter);
             initializeBackground(mSelectedWebVideo);
             setupRelatedMovieListRow();
-           // System.out.println(mSelectedWebVideo.toCompactString());
         }
         else if(mSelectedChannel != null){
             mPresenterSelector = new ClassPresenterSelector();
@@ -210,10 +194,8 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             setAdapter(mAdapter);
             initializeBackground(mSelectedChannel);
             setupRelatedMovieListRow();
-           // System.out.println(mSelectedChannel.toCompactString());
 
             if (mSelectedChannel.getDescription().isEmpty()) {
-                System.out.println("channel is missing data "+mSelectedChannel);
                 ForeGroundChannelScrape task = new ForeGroundChannelScrape();
                 task.execute(mSelectedChannel);
                 waitingForUpdate=true;
@@ -263,7 +245,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
     private void setupDetailsOverviewRow() {
         final DetailsOverviewRow row;
         if (null==this.getActivity()){
-            System.out.println("ghost context");
             return;}
         String thumbnail="";
         if (null != mSelectedWebVideo) {
@@ -275,7 +256,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
             thumbnail = mSelectedChannel.getThumbnail();
         }
         else {
-            System.out.println("no channels or vidoes mselected ");
             return;
         }
 
@@ -345,8 +325,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         detailsPresenter.setOnActionClickedListener(new OnActionClickedListener() {
             @Override
             public void onActionClicked(Action action) {
-                System.out.println("something clicked on vdf dp.soacl");
-
                 if (action.getId() == ACTION_SUBSCRIBE){
                     if (mSelectedChannel.isSubscribed()){
                         mSelectedChannel.setSubscribed(false);
@@ -363,7 +341,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                     setAdapter(mAdapter);
                     initializeBackground(mSelectedChannel);
                     setupRelatedMovieListRow();
-                    System.out.println(mSelectedChannel.toDebugString());
                 }
                 if (action.getId() == ACTION_WATCH) {
                     if (!mSelectedWebVideo.getMp4().isEmpty()) {
@@ -380,23 +357,17 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                 if (action.getId() == ACTION_GOTO_CHANNEL){
                     Channel targetChannel=null;
                     for (Channel c : allChannels){
-                      //  System.out.println(mSelectedWebVideo.getAuthorSourceID()+" = "+c.getSourceID());
                         if (c.getSourceID().equals(mSelectedWebVideo.getAuthorSourceID())){
                             targetChannel = c;
-                            System.out.println("found channel "+targetChannel.toDebugString());
                         }
                     }
                     if (null == targetChannel || targetChannel.getDescription().isEmpty()){
-                        System.out.println("no channel found, nex scrape launched");
                         targetChannel=new Channel("http://www.bitchute.com/channel/"+ mSelectedWebVideo.getAuthorSourceID());
                         new ForeGroundChannelScrape().execute(targetChannel);
                         Toast.makeText(getActivity(), "channel data missing, try again momentarily", Toast.LENGTH_SHORT).show();
                         waitingForUpdate=true;
                         return;
                     }
-                    System.out.println("channel should be "+targetChannel
-
-                    );
                     Intent intent = new Intent(getActivity(), DetailsActivity.class);
                     intent.putExtra(DetailsActivity.VIDEO, targetChannel);
                     startActivity(intent);
@@ -413,18 +384,13 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         WebVideo candidate;
         if (mSelectedWebVideo != null){
             for (String g: mSelectedWebVideo.getRelatedVideoArray()){
-                System.out.println(allVideos.size()+" setting up related video row for "+ mSelectedWebVideo.getRelatedVideoArray());
                 candidate = null;
                 for (WebVideo v: allVideos){
                     if (v.getSourceID().equals(g)){
                         candidate = v;
                     }
-                    else {
-                      //  System.out.println(v.getID()+" ["+v.getSourceID()+"]=["+g+"]");
-                    }
                 }
                 if (null == candidate) {
-                    System.out.println("failed to find existing copy of video for "+g);
                 }
                 else {
                     list.add(candidate);
@@ -444,17 +410,12 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
         }
         if (null != list ) {
             Collections.shuffle(list);
-            System.out.println("setting " + list.size() + " objects");
             CardPresenter bob = new CardPresenter();
             ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(bob);
             for (int j = 0; j < list.size(); j++) {
                 listRowAdapter.add(list.get(j));
             }
             HeaderItem header = new HeaderItem(0, subcategories[0]);
-            //System.out.println ("<<<<<<<<<<<<<<<<<<<<<<<<<< "+mAdapter.size()+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            //mAdapter.remove(0);
-            //System.out.println ("<<<<<<<<<<<<<<<<<<<<<<<<<< "+mPresenterSelector.+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
             mAdapter.add(new ListRow(header, listRowAdapter));
             mPresenterSelector.addClassPresenter(ListRow.class, new ListRowPresenter());
         }
@@ -482,7 +443,6 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
     }
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-System.out.println("key pressed damit");
 return true;
     }
 
@@ -492,7 +452,6 @@ return true;
             Object item,
             RowPresenter.ViewHolder rowViewHolder,
             Row row) {
-        System.out.println("something clicked in vdf oic");
         if (item instanceof WebVideo) {
             Log.d(TAG, "Item: " + item.toString());
             WebVideo webVideo = (WebVideo) item;
@@ -520,7 +479,6 @@ return true;
                     task.execute((WebVideo) item);
                     waitingForUpdate=true;
                 }
-                System.out.println("meaning to launch" + webVideo.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(DetailsActivity.VIDEO, webVideo);
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -556,7 +514,6 @@ return true;
             } else if (item instanceof Channel) {
 
                 Channel channel = (Channel) item;
-                System.out.println("someone clicked on channel ");
                 Log.d(TAG, "Item: " + item.toString());
                 if (channel.getDescription().isEmpty()) {
                     ForeGroundChannelScrape task = new ForeGroundChannelScrape();

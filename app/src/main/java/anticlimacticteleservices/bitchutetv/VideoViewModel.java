@@ -1,6 +1,7 @@
 package anticlimacticteleservices.bitchutetv;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -11,14 +12,14 @@ import java.util.List;
 public class VideoViewModel extends AndroidViewModel {
     private VideoRepository repository;
     private LiveData<List<WebVideo>> allVideos;
-
+    private String TAG="VideoViewModel";
 
     public VideoViewModel(@NonNull Application application) {
         super(application);
 
         repository = new VideoRepository((application));
         allVideos = repository.getAllVideos();
-        System.out.println("created video view model"+allVideos.getValue());
+        Log.i(TAG,"created video view model"+allVideos.getValue());
     }
     public void insert(WebVideo webVideo){
         repository.insert(webVideo);

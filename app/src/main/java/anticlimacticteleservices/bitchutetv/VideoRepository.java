@@ -34,13 +34,9 @@ public class VideoRepository {
     }
     public ArrayList<WebVideo> getDeadWebVideos(){return deadWebVideos;}
     public boolean exists(String sourceID){
-       // System.out.println("starting to check existence "+sourceID);
         if (videoDao.getVideosBySourceID(sourceID).size() >0){
-           // System.out.println("this one says it matches"+videoDao.getVideosBySourceID(sourceID).get(0).toCompactString());
-            //System.out.println("false");
             return true;
         }
-     //   System.out.println("true");
         return false;
     }
 
@@ -56,7 +52,6 @@ public class VideoRepository {
             WebVideo v =  webVideos[0];
             videoDao.insert(v);
             v = (videoDao.getVideosBySourceID(webVideos[0].getSourceID())).get(0);
-          //  System.out.println("VR inserted video "+v.toCompactString());
             return null;
         }
     }
@@ -86,15 +81,10 @@ public class VideoRepository {
         protected Void doInBackground(WebVideo... webVideos){
             WebVideo v = webVideos[0];
             if (v.getID()>0){
-             //   System.out.println("Updating video "+v.getID());
                 videoDao.update(v);
-            //    System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
             }
             else{
-              //  System.out.println("Attempting to update vidoe without source id, inserting instead");
                 videoDao.insert(v);
-            //    System.out.println("VR updated video "+v.getID()+" ["+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
-
             }
 
             return null;

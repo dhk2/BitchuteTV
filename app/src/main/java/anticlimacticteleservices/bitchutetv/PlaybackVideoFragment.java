@@ -41,7 +41,6 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
 
         final WebVideo video =
                 (WebVideo) getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
-        System.out.println(video.toCompactString());
         if (!video.getMp4().isEmpty()) {
             VideoSupportFragmentGlueHost glueHost =
                     new VideoSupportFragmentGlueHost(PlaybackVideoFragment.this);

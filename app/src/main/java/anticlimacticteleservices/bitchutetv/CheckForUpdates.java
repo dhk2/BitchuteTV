@@ -139,13 +139,13 @@ class CheckForUpdates extends AsyncTask<String, String, Boolean> {
 
 channelloop:for (Channel chan :allChannels){
             if (chan.isSubscribed()) {
-                Log.d(TAG,"Checking "+chan.getTitle()+" to see if it's time to sync");
+                Log.v(TAG,"Checking "+chan.getTitle()+" to see if it's time to sync");
                 Long diff = new Date().getTime() - chan.getLastsync();
                 //TODO implement variable refresh rate by channel here
                 if ((diff > 30 * 60 * 1000) || forceRefresh) {
                     Log.v("Channel-Update", "Checking " + chan.getAuthor() + " for new videos since " + String.valueOf(diff / 1000) + " seconds ago");
                     chan.setLastsync(new Date());
-                    Log.d(TAG,chan.toDebugString());
+                    Log.v(TAG,chan.toDebugString());
                     channelDao.update(chan);
                     try {
                         doc = Jsoup.connect(chan.getBitchuteRssFeedUrl()).get();
@@ -156,6 +156,7 @@ channelloop:for (Channel chan :allChannels){
                         updateError = e.toString();
                         //crash out if unable to reach bitchute
                         if (e.getMessage().indexOf("Unable to resolve host") > 0) {
+                            Log.e(TAG,"unable to resolve host error, check internets");
                             return false;
                         }
                     }
@@ -165,7 +166,6 @@ channelloop:for (Channel chan :allChannels){
                         continue channelloop;
                     }
                     Elements rssVideos = doc.getElementsByTag("item");
-                    System.out.println("found "+rssVideos.size()+" videos in RSS feed");
                     bitchuteLoop:
                     for (Element rssVideo : rssVideos) {
                         nv = new WebVideo(rssVideo.getElementsByTag("link").first().text());
@@ -190,9 +190,6 @@ channelloop:for (Channel chan :allChannels){
                         nv.setThumbnail(rssVideo.getElementsByTag("enclosure").first().attr("url"));
                         nv.setAuthor(chan.getTitle());
                         if (matches.isEmpty()) {
-                            System.out.println("no matching source id found in database");
-
-                            System.out.println("About to add new video "+nv.toCompactString());
                             allWebVideos.add(nv);
                             videoDao.insert(nv);
                             newcount++;
@@ -202,18 +199,18 @@ channelloop:for (Channel chan :allChannels){
                         } else {
                             // this just seems to cause database corruption
                             WebVideo original = matches.get(0);
-                            System.out.println("original:\n"+original.toCompactString()+" \n fresh:\n"+nv.toCompactString()+"\n");
-                            //if (original.smartUpdate(nv)) {
-                            //    videoDao.update(original);
-                            //    updatecount++;
-                            //} else {
+                            if (original.getMagnet().isEmpty()){
+                                ForeGroundVideoScrape task = new ForeGroundVideoScrape();
+                                task.execute(original);
+                                updatecount++;
+                            } else {
                                 dupecount++;
-                            //}
+                            }
                         }
                     }
                 } else {
                     tooEarly++;
-                    Log.d(TAG,"too early, synched "+diff/1000+" seconds ago");
+                    Log.v(TAG,"too early, synched "+diff/1000+" seconds ago");
                 }
 
             }
@@ -224,7 +221,7 @@ channelloop:for (Channel chan :allChannels){
             }
         }
 
-        Log.v("Channel-Update",dupecount+" duplicate videos discarded,"+mirror+" videos mirrored," +newcount+" new videos added, "+updatecount+" videos update, "+tooOld+" videos too old, "+tooEarly+ " channels not checked ");
+        Log.d("Channel-Update",dupecount+" duplicate videos discarded,"+mirror+" videos mirrored," +newcount+" new videos added, "+updatecount+" videos update, "+tooOld+" videos too old, "+tooEarly+ " channels not checked ");
         Util.scheduleJob(context);
         return true;
     }

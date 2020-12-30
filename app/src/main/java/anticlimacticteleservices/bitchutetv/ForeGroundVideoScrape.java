@@ -21,7 +21,7 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
     String error ="";
     VideoRepository vr;
     boolean debug=false;
-
+    String TAG = "F-scrape";
 
         @Override
         protected WebVideo doInBackground(WebVideo... webVideos) {
@@ -31,9 +31,10 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
             WebVideo nv = new WebVideo(video.getBitchuteTestUrl());
             Document doc;
             ArrayList <WebVideo> allWebVideos = vr.getDeadWebVideos();
-            System.out.println("dead videos "+allWebVideos.size());
+            Log.d(TAG,"dead videos "+allWebVideos.size());
             debug=false;
             Log.d("fvs-start",video.toCompactString());
+            Log.d("fvs-start",nv.toCompactString());
             try {
                 doc = Jsoup.connect(nv.getBitchuteUrl()).get();
 
@@ -46,7 +47,6 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
                 String h2=h1.substring(19,28);
                 String h3 = h1.substring(32);
                 h3 = h3.substring(0,h3.length()-1);
-                System.out.println(h1+":"+h2+":"+h3);
                 //SimpleDateFormat when=new SimpleDateFormat("MMM d Y");
                         //new SimpleDateFormat("M d  , Y HH:MM z");
               //  "January 4th, 2020T00:59 UTC"
@@ -56,18 +56,14 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
                     Date past = new SimpleDateFormat("MMM dd',' yyyyHH:mm zzz")
                             .parse((h3+h2).replaceAll("(?<=\\d)(st|nd|rd|th)", ""));
 
-                   // System.out.println(when.toString()+" ><  "+past);
                     nv.setDate(past);
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
 
                 nv.setLastScrape(new Date().getTime());
-                System.out.println("base data scraped");
-
                 ArrayList<WebVideo> relatedcontent= (ArrayList) Bitchute.getVideos(doc);
                // ArrayList<WebVideo> relatedcontent=new ArrayList<WebVideo>();
-                System.out.println(relatedcontent.size()+" related videos");
      related:  for (WebVideo v : relatedcontent) {
                      if ((null == v.getSourceID()) || v.getSourceID().isEmpty() || v.getSourceID().equals("video")) {
                          Log.e("FGVS - related content","problem with related video" +v.toCompactString());
@@ -75,7 +71,6 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
          }
                     for (WebVideo check : allWebVideos){
                         if (check.getSourceID().equals(v.getSourceID())) {
-                            System.out.println("related video already in database" + check.toCompactString());
                             if (check.smartUpdate(v)){
                                 Log.d("fvs","updated related video in database");
                                 vr.update(check);
@@ -98,16 +93,16 @@ public class ForeGroundVideoScrape extends AsyncTask<WebVideo, WebVideo, WebVide
                 }
                 nv.setAuthorSourceID(g);
                 nv.setAuthor((channel.first().getElementsByClass("name").text()));
-                System.out.println("channel author determined");
-
-                Elements tags = doc.getElementsByTag("tags");
-                for (Element t : tags){
-                    System.out.println("hash tags:"+t.text());
+                Elements tags = doc.getElementsByClass("tags").first().getElementsByTag("A");
+                Log.d(TAG, String.valueOf(tags.size()));
+                String hash="";
+                for (Element t :tags) {
+                    hash=hash+t.text()+" ";
                 }
-                System.out.println(("hashtags sorted"));
+                nv.setHashtags(hash);
                 video.smartUpdate(nv);
                 vr.update(video);
-                Log.d("FVS-done",video.toCompactString());
+                Log.d("FVS-done",video.toDebugString());
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e("Videoscrape","network failure in bitchute scrape for "+nv.toCompactString());

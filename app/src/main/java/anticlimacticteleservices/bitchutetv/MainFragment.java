@@ -102,7 +102,7 @@ public class MainFragment extends BrowseSupportFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate");
-        debug=false;
+        debug=true;
         popular = new ArrayList<WebVideo>();
         trending = new ArrayList<WebVideo>();
         subscriptions = new ArrayList<WebVideo>();
@@ -114,11 +114,9 @@ public class MainFragment extends BrowseSupportFragment {
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
         allVideos=(ArrayList)vvm.getDeadVideos();
         new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
-        if (debug) System.out.println(("view model attached successfully"));
         vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
             public void onChanged(List<WebVideo> webVideos) {
-                if (debug)System.out.println("something changed in the data "+ webVideos.size());
                 followingHashtags = (ArrayList)MainActivity.data.followingHashtags;
                 trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
                 allVideos = (ArrayList)webVideos;
@@ -134,14 +132,13 @@ public class MainFragment extends BrowseSupportFragment {
                     for (Channel c:allChannels){
                         if (c.isSubscribed() && v.getAuthorSourceID().equals(c.getSourceID())){
                                 subscriptions.add(v);
-                                Log.d(TAG+"live","Adding "+v.getID()+"("+v.getSourceID()+"):"+v.getTitle()+" to subscribed for "+c.toCompactString());
+                                Log.v(TAG+"live","Adding "+v.getID()+"("+v.getSourceID()+"):"+v.getTitle()+" to subscribed for "+c.toDebugString());
                         }
                     }
                 }
                 Collections.sort(popular);
                 Collections.sort(trending);
                 Collections.sort(subscriptions);
-                if (debug) System.out.println("popular:"+popular.size()+" trending"+trending.size()+ "history:"+history.size());
                 if (!rowsSetup){
                     if (allVideos.size()>0) {
                         loadRows();
@@ -157,7 +154,6 @@ public class MainFragment extends BrowseSupportFragment {
         cvm.getAllChannels().observe(this, new Observer<List<Channel>>(){
             @Override
             public void onChanged(List<Channel> channels) {
-                if (debug) System.out.println("something changed in the channel data "+channels.size());
                 allChannels = (ArrayList)channels;
                 suggested = new ArrayList<Channel>();
                 subs=new ArrayList<Channel>();
@@ -184,7 +180,7 @@ public class MainFragment extends BrowseSupportFragment {
             for (Channel c:allChannels){
                 if (c.isSubscribed() && v.getAuthorSourceID().equals(c.getSourceID())){
                     subscriptions.add(v);
-                    Log.d(TAG+"all","Adding "+v.getID()+":"+v.getTitle()+" to subscribed video list");
+                    Log.v(TAG+"all","Adding "+v.getID()+":"+v.getTitle()+" to subscribed video list");
                 }
             }
         }
@@ -194,17 +190,12 @@ public class MainFragment extends BrowseSupportFragment {
         trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
         followingHashtags = (ArrayList)MainActivity .data.followingHashtags;
         followingCategories = (ArrayList)MainActivity.data.followingCategories;
-        System.out.println(popular.size()+" popular videos "+trending.size()+"trending, of total "+allVideos.size());
         super.onActivityCreated(savedInstanceState);
 
         if (followingHashtags.size()>0) {
             for (String g : followingHashtags) {
-                System.out.println("Getting videos for hashtag "+"/hashtag/" + g.substring(1));
                 new Bitchute.GetWebVideos().execute("/hashtag/" + g.substring(1));
             }
-        }
-        else {
-            System.out.println(("failed, no hashtags available"));
         }
         prepareBackgroundManager();
         setupUIElements();
@@ -303,11 +294,9 @@ public class MainFragment extends BrowseSupportFragment {
         }
         for ( Category c : Bitchute.getCategories()){
             if (c.isFollowing()){
-                System.out.println("handling category "+c.getName());
                 for (WebVideo v:allVideos){
                     if (v.getCategory().equals(c.getName())){
                         listRowAdapter.add(v);
-                        System.out.println("found a category match");
                     }
                 }
                 HeaderItem header = new HeaderItem(headerID,c.getName() );
@@ -321,10 +310,8 @@ public class MainFragment extends BrowseSupportFragment {
             Log.d("MF-Loadrow","checking hashtags");
             for (Object g : followingHashtags) {
                 String tag=(String)g;
-                System.out.println("Searching for tag "+tag);
                 for (Object v:allVideos){
                     WebVideo vid =(WebVideo)v;
-                    //System.out.println(((WebVideo) v).toDebugString());
                     if ((vid.getHashtags()).contains(tag)){
                         listRowAdapter.add(v);
                     }
@@ -389,6 +376,7 @@ public class MainFragment extends BrowseSupportFragment {
                 gridRowAdapter.add("Videos");
                 gridRowAdapter.add("Channels");
                 gridRowAdapter.add(("Nuke"));
+                gridRowAdapter.add(("Hashtags"));
             }
             gridRowAdapter.add(("Import"));
 
@@ -464,11 +452,9 @@ public class MainFragment extends BrowseSupportFragment {
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
-            System.out.println(row.toString()+"><"+rowViewHolder.toString());
             if (item instanceof WebVideo) {
                 WebVideo webVideo = (WebVideo) item;
                 Log.d(TAG, "Item: " + webVideo.toDebugString());
-                System.out.println("meaning to launch" + webVideo.toCompactString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(DetailsActivity.VIDEO, webVideo);
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -480,7 +466,6 @@ public class MainFragment extends BrowseSupportFragment {
             }
             else if (item instanceof String) {
                 String g = (String) item;
-                System.out.println("homeslice clicked on "+g);
                 if (item.equals("Import")) {
                     final Dialog dialog = new Dialog(getContext());
                     dialog.setContentView(R.layout.importdialog);
@@ -509,10 +494,23 @@ public class MainFragment extends BrowseSupportFragment {
                     }
                 }
                 if (g.equals("Channels")) {
-                    for (Channel c : cvm.getDeadChannels()){
+                    for (Channel c : allChannels){
                         Log.d("debug",c.toDebugString());
                     }
                 }
+                int empty=0;
+                if (g.equals("Hashtags")){
+                    for (WebVideo v : vvm.getDeadVideos()){
+                        String gg = v.getHashtags();
+                        if (gg.equals("")) {
+                            empty++;
+                        }
+                        else {
+                            Log.d("debug", v.getHashtags());
+                        }
+                    }
+                }
+                Log.d("debug",empty+" videos with no hashtags");
                 if (g.equals("Nuke")) {
                     for (WebVideo vid : allVideos){
                         vvm.delete(vid);
@@ -522,8 +520,6 @@ public class MainFragment extends BrowseSupportFragment {
                     }
                 }
                 if (g.startsWith("#")){
-                    System.out.println("clicked on a hashtag");
-                    System.out.println(((String) item).substring(1));
                     MainActivity.data.followingHashtags.add(g);
                     followingHashtags =(ArrayList) MainActivity.data.followingHashtags;
                     new Bitchute.GetWebVideos().execute("/hashtag/"+g.substring(1));
@@ -548,7 +544,6 @@ public class MainFragment extends BrowseSupportFragment {
             else if (item instanceof Channel) {
 
                 Channel channel = (Channel) item;
-                System.out.println("someone clicked on channel "+channel.toCompactString());
                 Log.d(TAG, "Item: " + item.toString());
                 ForeGroundChannelScrape task = new ForeGroundChannelScrape();
                 task.execute((Channel) item);
@@ -576,7 +571,6 @@ public class MainFragment extends BrowseSupportFragment {
                 startBackgroundTimer();
             }
             if (item instanceof String){
-                System.out.println(item);
             }
         }
     }
@@ -616,31 +610,35 @@ public class MainFragment extends BrowseSupportFragment {
         @JavascriptInterface
         public void handleHtml(String html) {
             Document doc = Jsoup.parse(html);
-            Log.v("Settings-Import","["+doc.title()+"]");
-            Elements subs = doc.getElementsByClass("subscription-container");
-            for (Element s : subs) {
-                //Log.d(TAG,"subscription info:"+s);
-                Channel chan = new Channel("https://www.bitchute.com"+s.getElementsByTag("a").first().attr("href"));
-                chan.setTitle(s.getElementsByTag("a").first().attr("title"));
-                chan.setThumbnail(s.getElementsByAttribute("data-src").last().attr("data-src"));
-                chan.setDescription(s.getElementsByClass("subscription-description-text").text());
-                Log.d(TAG,"proposed new channel"+chan.toDebugString());
-                for (Channel c:allChannels){
-                    if (c.getBitchuteID().equals(chan.getBitchuteID())){
-                        c.setSubscribed(true);
-                        cvm.update(c);
-                        chan.setBitchuteID("dead");
-                        Log.d(TAG,"channel already exist, subscribed"+c.getTitle());
+            Log.v("Settings-Import", "[" + doc.title() + "]");
+            if (doc.title().equals("Subscriptions - BitChute")) {
+                Elements subs = doc.getElementsByClass("subscription-container");
+                for (Element s : subs) {
+                    //Log.d(TAG,"subscription info:"+s);
+                    Channel chan = new Channel("https://www.bitchute.com" + s.getElementsByTag("a").first().attr("href"));
+                    chan.setTitle(s.getElementsByTag("a").first().attr("title"));
+                    chan.setThumbnail(s.getElementsByAttribute("data-src").last().attr("data-src"));
+                    chan.setDescription(s.getElementsByClass("subscription-description-text").text());
+                    Log.d(TAG, "proposed new channel" + chan.toDebugString());
+                    for (Channel c : allChannels) {
+                        if (c.getBitchuteID().equals(chan.getBitchuteID())) {
+                            if (!c.isSubscribed()) {
+                                c.setSubscribed(true);
+                                cvm.update(c);
+                            }
+                            chan.setBitchuteID("dead");
+                            Log.d(TAG, "channel already exists:(" + c.getBitchuteID() + ") " + c.getTitle());
+                        }
+                    }
+                    if (!chan.getBitchuteID().equals("dead")) {
+                        Log.d(TAG, "no match adding new channel" + chan.toDebugString());
+                        chan.setSubscribed(true);
+                        cvm.insert(chan);
                     }
                 }
-                if (!chan.getBitchuteID().equals("dead")){
-                    Log.e(TAG,"no match adding new channel"+chan.toDebugString());
-                    chan.setSubscribed(true);
-                    cvm.insert(chan);
-                }
+                dialogHandle.dismiss();
+                Toast.makeText(MainActivity.data.context, "adding " + subs.size() + " possible channels from bitchute.", Toast.LENGTH_SHORT).show();
             }
-            dialogHandle.dismiss();
-            Toast.makeText(MainActivity.data.context,"adding "+subs.size()+ " possible channels from bitchute.",Toast.LENGTH_SHORT).show();
         }
     }
 }

@@ -185,7 +185,6 @@ private val TAG = "fuck"
             }
 
             // Build an updated channel object and add our metadata
-            //Log.e("Fuck this", channelLogoUri.toString())
             val updatedChannel = channelBuilder
                     .setInternalProviderId(collection.id)
                     .setLogo(channelLogoUri)

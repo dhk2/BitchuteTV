@@ -45,15 +45,10 @@ public class VideoScrape extends AsyncTask<WebVideo, WebVideo, WebVideo> {
     @Override
     protected WebVideo doInBackground(WebVideo... webVideos) {
         context = this.context;
-        System.out.println("vid-scrape elapsed minutes"+(new Date().getTime()- webVideos[0].getLastScrape())/60000);
         if (((new Date().getTime()- webVideos[0].getLastScrape())/60000)<5) {
             return null;
         }
-        else {
-            System.out.println("made it past the scrape time check");
-        }
         context = SicSync.context;
-
         Log.d("Videoscrape","headless:"+headless);
         vid = webVideos[0];
   //      preferences = context.getSharedPreferences( "anticlimacticteleservices.sic" + "_preferences", MODE_PRIVATE);

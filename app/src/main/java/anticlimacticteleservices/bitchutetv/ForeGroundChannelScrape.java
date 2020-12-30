@@ -35,16 +35,11 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
         }
         if (channelCheck != null){
             if (channelCheck.getDescription().isEmpty()) {
-                System.out.println("scraping existing but unscraped channel " + channelCheck.toDebugString());
                 oc = channelCheck;
             }
             else {
-                System.out.println("rescraping previously scraped chnnel"+channelCheck.toDebugString());
                 oc = channelCheck;
             }
-        }
-        else{
-            System.out.println("scraping brand new channel"+nc.toDebugString());
         }
         try {
             Document doc = Jsoup.connect(nc.getBitchuteUrl()).get();
@@ -61,18 +56,16 @@ public class ForeGroundChannelScrape extends AsyncTask<Channel,Channel,Channel> 
                 }
             }
             if (oc == null) {
-                System.out.println("no video in database, adding to database");
                 cr.insert(nc);
             }
             else{
-                System.out.println("version pulled out of database for comparison" +oc.toDebugString());
-                    oc.setDescription(nc.getDescription());
-                    oc.setDateHackString(nc.getDateHackString());
-                    oc.setTitle(nc.getTitle());
-                    oc.setThumbnailurl(nc.getThumbnail());
-                    oc.setThumbnail(nc.getThumbnailurl());
-                    oc.setAuthor(nc.getAuthor());
-                    cr.update(oc);
+                oc.setDescription(nc.getDescription());
+                oc.setDateHackString(nc.getDateHackString());
+                oc.setTitle(nc.getTitle());
+                oc.setThumbnailurl(nc.getThumbnail());
+                oc.setThumbnail(nc.getThumbnailurl());
+                oc.setAuthor(nc.getAuthor());
+                cr.update(oc);
             }
 
             ArrayList <WebVideo> relatedWebVideos = Bitchute.getVideos(doc);

@@ -21,7 +21,7 @@ public class Bitchute {
         String target="";
         String type="";
         Document doc;
-        String TAG = "BitChute";
+        String TAG = "BC-fetch-async";
         ArrayList <WebVideo> foundVideos;
         @Override
         protected String doInBackground(String... strings) {
@@ -29,11 +29,10 @@ public class Bitchute {
             ChannelRepository cr = new ChannelRepository(MainActivity.data.getApplication());
             ArrayList <WebVideo> allVideos = vr.getDeadWebVideos();
             String rl = strings[0];
-            Log.d("bitchute-getvideos","starting to process video search for "+rl);
+            Log.i(TAG,"starting to process video search for "+rl);
             if ((" "+rl).indexOf("/")>0) {
                 type = rl.split("/")[1];
                 target = rl.split("/")[2];
-                System.out.println("("+type+")" + "   <=>   " +"["+ target+"]");
             }
             else {
                 type = "channel";
@@ -50,51 +49,40 @@ public class Bitchute {
             try {
                 doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
                 foundVideos= (ArrayList) getVideos(doc);
-                Log.d(TAG,"found "+foundVideos.size()+" Videos looking for "+type+" "+target+ " at "+rl);
+                Log.i(TAG,"found "+foundVideos.size()+" Videos looking for "+type+" "+target+ " at "+rl);
+
+                // not sure why this was needed, disabling to see
+                /*
                 if (type.equals("category")){
                     for (WebVideo v : foundVideos){
                         v.setCategory(target);
                     }
                 }
-
                 if (type.equals("hashtag")){
-
-                    doc = Jsoup.connect("https://www.bitchute.com"+rl).get();
-                    foundVideos= (ArrayList) getVideos(doc);
-                    System.out.println("setting hashtags on videos for hashtag #"+target);
                     for (WebVideo v : foundVideos){
                         if (!v.getHashtags().contains(target)){
                             v.setHashtags("#"+target);
                         };
                     }
                 }
+               */
         found:  for (WebVideo v :foundVideos){
                     for (WebVideo x : allVideos){
                         if (x.getSourceID().equals(v.getSourceID())){
-
                             x.smartUpdate(v);
-                            if (type.equals("category")){
-                                x.setCategory(target);
-                                System.out.println("set category "+x.toCompactString());
-                            }
-                            if (type.equals("hashtag")) {
-                                x.setHashtags("#" + target);
-                                System.out.println("set hashtag "+x.toCompactString());
-                            }
-                            Log.d("Bitchute-GetWebVideo","video already in database, updating "+x.toCompactString());
+                            Log.v(TAG,"video already in database, updating "+x.getSourceID()+":"+x.getTitle());
                             vr.update(x);
                             continue found;
                         }
                     }
-                    Log.d("Bitchute-GetWebVideo","video not in database, inserting "+v.toCompactString());
+                    Log.v("Bitchute-GetWebVideo","video not in database, inserting "+v.toCompactString());
                     if (type.equals("category")){
                         v.setCategory(target);
                     }
-                    if (type.equals("hashtag")) {
-                        v.setHashtags("#" + target);
+                    if (type.equals("hashtag") && !v.getHashtags().contains(target)) {
+                       v.setHashtags(" #" + target);
                     }
                     vr.insert(v);
-                    System.out.println("inserted "+v.toCompactString());
                 }
             } catch (MalformedURLException e) {
                 Log.e("get video string", "Malformed URL: " + e.getMessage());
@@ -110,6 +98,7 @@ public class Bitchute {
     public static ArrayList <WebVideo> getVideos(Document doc) {
         ArrayList<WebVideo> foundWebVideos = new ArrayList<>();
         WebVideo nv = null;
+        String TAG = "BC-getvids";
         try {
             Elements results = doc.getElementsByClass("video-card");
             for (Element r : results) {
@@ -117,7 +106,6 @@ public class Bitchute {
                 Date pd = new Date();
                 nv.setHackDateString(r.getElementsByClass("video-card-published").first().text());
                 Elements author  = r.getElementsByClass("video-card-channel");
-                //System.out.println(author.size()+" athour element:"+author);
                 // Some video cards appear to lack author information
                 if ((author != null) && (author.first() != null)){
                     nv.setAuthor(author.first().text());
@@ -126,39 +114,26 @@ public class Bitchute {
                     ugly = ugly.substring(ugly.indexOf("/")+1);
                     ugly = ugly.substring(0,ugly.indexOf("/"));
                     nv.setAuthorSourceID(ugly);
-
                 }
                 nv.setTitle(r.getElementsByClass("video-card-title").first().text());
                 nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
                 nv.setViewCount(r.getElementsByClass("video-views").first().text());
-
-
-
                 //TODO calculate duration time into milliseconds  r.getElementsByClass("video-duration").first().text()
                 if (nv.getCategory().isEmpty()){
                     nv.setCategory("popular");
                 }
-
-
                 foundWebVideos.add(nv);
-
             }
-
         } catch (NullPointerException e) {
-            //System.out.println(doc);
-            System.out.println(nv.toDebugString());
-            Log.e("Bitchute-get-videos", "Null pointer exception 1" +Log.getStackTraceString(e));
-
-            //System.out.println(doc);
+            Log.e(TAG,nv.toDebugString());
+            Log.e(TAG, "Null pointer exception 1" +Log.getStackTraceString(e));
         }
         if (null == doc) {
-            System.out.println("failed to load doc");
+            Log.d(TAG,"failed to load page, can't parse trending channels");
         } else {
             Elements results = doc.getElementsByClass("video-trending-container");
             for (Element r : results) {
-                //  System.out.println("\n\n"+ r);
-                   nv = new WebVideo("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href"));
-                //nv.setAuthorID(-1l);
+                nv = new WebVideo("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href"));
                 nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
                 nv.setViewCount(r.getElementsByClass("video-views").first().text());
                 nv.setTitle(r.getElementsByClass("video-trending-title").first().text());
@@ -169,16 +144,14 @@ public class Bitchute {
                 ugly = ugly.substring(ugly.indexOf("/")+1);
                 ugly = ugly.substring(0,ugly.indexOf("/"));
                 nv.setAuthorSourceID(ugly);
-                //System.out.println(r.getElementsByClass("video-duration").first().text());
                 if (nv.getCategory().isEmpty()){
                     nv.setCategory("trending");
                 }
                 foundWebVideos.add(nv);
             }
+            Log.d(TAG,"Loaded "+foundWebVideos.size()+ "videos from video-trending containers");
             results = doc.getElementsByClass("video-result-container");
-            Log.e("wtf", String.valueOf(results.size()));
             for (Element r : results) {
-                //  System.out.println("\n\n"+ r);
                 nv = new WebVideo("https://www.bitchute.com" + r.getElementsByTag("a").first().attr("href"));
                 //nv.setAuthorID(-1l);
                 nv.setThumbnailurl(r.getElementsByTag("img").first().attr("data-src").toString());
@@ -192,13 +165,12 @@ public class Bitchute {
                 ugly = ugly.substring(ugly.indexOf("/")+1);
                 ugly = ugly.substring(0,ugly.indexOf("/"));
                 nv.setAuthorSourceID(ugly);
-                //System.out.println(r.getElementsByClass("video-duration").first().text());
                 if (nv.getCategory().isEmpty()){
                     nv.setCategory("trending");
                 }
-                Log.e("WTF",nv.toDebugString());
                 foundWebVideos.add(nv);
             }
+            Log.d(TAG,"Loaded "+foundWebVideos.size()+ "videos from video-result containers");
         }
         Log.v("bitchute-class", (Integer.toString(foundWebVideos.size())) + "Videos found");
         return foundWebVideos;
@@ -215,13 +187,11 @@ public class Bitchute {
                 nc.setThumbnail(nc.getThumbnailurl());
                 nc.setAuthor(r.text());
                 nc.setTitle(r.text());
-                //System.out.println(nc.toCompactString());
                 foundChannels.add(nc);
             }
             Log.d("wtf rdux","found "+foundChannels.size()+" suggested channels");
         } catch (NullPointerException e) {
             Log.e("get-channels-doc", "Null pointer exception 2" + e.getMessage());
-            //System.out.println(doc);
         }
         Log.v("bitchute-class", (Integer.toString(foundChannels.size())) + "Channels found");
         return foundChannels;
@@ -230,20 +200,15 @@ public class Bitchute {
 
     public static List getHashtags(Document doc) {
         List<String> foundHashtags = new ArrayList<String>();
-        System.out.println("looking for hashtags");
         try {
             Element temp = doc.getElementsByClass("list-inline list-unstyled").first();
-            System.out.println(temp);
             Elements results =temp.getElementsByTag("li");
-            System.out.println(results.first().text());
             for (Element r : results) {
-                System.out.println(r.text());
                 foundHashtags.add(r.text());
             }
 
         } catch (NullPointerException e) {
             Log.e("get-hashtags-doc", "Null pointer exception 2" + e.getMessage());
-            //System.out.println(doc);
         }
         Log.v("bitchute-class", (Integer.toString(foundHashtags.size())) + "hashtags found");
         return foundHashtags;
@@ -306,7 +271,7 @@ public class Bitchute {
                 MainActivity.data.setUpToDate(false);
             }
             else {
-                System.out.println("you somehow thought it was a good idea to marked a video watched that doesn't have an id");
+                Log.e("bitchute","you somehow thought it was a good idea to marked a video watched that doesn't have an id");
             }
             return null;
         }
@@ -324,43 +289,32 @@ public class Bitchute {
         protected String doInBackground(String... params) {
             try {
                 doc = Jsoup.connect("https://www.bitchute.com/#listing-popular").get();
-                System.out.println("loaded bitchute home page");
+                Log.d("bitchute","loaded bitchute home page");
                 ArrayList<WebVideo> foundWebVideos = getVideos(doc);
-                System.out.println("loaded homepage videos "+foundWebVideos.size());
                 List<Channel> foundChannels = getChannels(doc);
-                System.out.println("loaded home page channels "+foundChannels.size());
                 List<String> foundHashtags = getHashtags(doc);
                 for (String t:foundHashtags){
                     MainActivity.data.addTrendingHashtag(t);
                 }
-                System.out.println("found hashtags "+foundHashtags);
                 for (WebVideo v: foundWebVideos){
-                    System.out.println("Attempting to add video "+v.getAuthorSourceID()+"] "+v.getAuthor()+" ("+v.getSourceID()+") "+v.getTitle());
                     if (!vr.exists(v.getSourceID())){
 
                         vr.insert(v);
-                       // System.out.println("BH VR inserting "+v.toCompactString());
                     }
                     else{
-                       // System.out.println( "BH VR not inserting "+v.toCompactString());
                     }
 
                 }
                 for (Channel c : foundChannels){
-                    //System.out.println("Attempting to add channel "+c.getSourceID()+" "+c.getTitle());
                     c.setYoutubeID("suggested");
                     if (!cr.exists(c.getSourceID())){
-                     //   System.out.println("adding new channel "+c.toDebugString());
                         cr.insert(c);
                     }
                     else {
                         //TODO determine if there is a use case where this update would be informative.
-                      // System.out.println("Updating scraped channel"+c.toCompactString());
                        for (Channel inception : cr.getDeadChannels()){
-                          // System.out.println("["+inception.getSourceID()+"] == ["+c.getSourceID()+"]");
                            if (inception.getSourceID().equals(c.getSourceID())){
                                inception.setYoutubeID("suggested");
-                              // System.out.println("this is the channel being updated "+c.toDebugString());
                                cr.update(inception);
                            }
                        }

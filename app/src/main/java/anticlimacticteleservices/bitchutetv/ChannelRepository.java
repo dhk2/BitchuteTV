@@ -39,7 +39,6 @@ public class ChannelRepository {
         @Override
         protected Void doInBackground(Channel... channels){
             channelDao.insert(channels[0]);
-            //System.out.println("VR inserting channel "+channels[0].toDebugString());
             return null;
         }
     }
@@ -68,7 +67,6 @@ public class ChannelRepository {
         @Override
         protected Void doInBackground(Channel... channels){
             channelDao.update(channels[0]);
-           // System.out.println("VR updating channel "+channels[0].toDebugString());
             return null;
         }
 
@@ -78,13 +76,10 @@ public class ChannelRepository {
         }
     }
     public boolean exists(String sourceID) {
-        System.out.println("starting to check existence");
         ArrayList<Channel> test = (ArrayList) channelDao.getChannelsBySourceID(sourceID);
         if (test.size() == 0) {
-            System.out.println("no match for " + sourceID);
             return false;
         }
-        System.out.println("Found a match in " + test.get(0).toCompactString());
         return true;
     }
 

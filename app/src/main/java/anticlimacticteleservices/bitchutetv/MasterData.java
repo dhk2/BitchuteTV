@@ -21,7 +21,7 @@ public class MasterData {
     List followingHashtags;
     List followingCategories;
     Boolean upToDate;
-
+    String TAG="masterdata";
     public MasterData (Application application, Context context){
         allWebVideos = new ArrayList<WebVideo>();
         allChannels = new ArrayList<Channel>();
@@ -29,7 +29,6 @@ public class MasterData {
         this.context = context;
         vr = new VideoRepository(application);
         allWebVideos = (ArrayList)vr.getDeadWebVideos();
-        System.out.println(" size of datg abase"+ allWebVideos.size());
         trendingHashtags=loadTrendingHashtags();
         followingHashtags =new ArrayList<String>();
         followingCategories = new ArrayList<String>();
@@ -55,7 +54,6 @@ public class MasterData {
             }
         }
         trendingHashtags.add(hashTag);
-        System.out.println(trendingHashtags.size()+" hashtags");
         return true;
     }
     public boolean addFollowingHashtag(String hashTag){
