@@ -16,7 +16,7 @@ package anticlimacticteleservices.bitchutetv;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.view.View;
 
 import androidx.leanback.app.VideoSupportFragment;
 import androidx.leanback.app.VideoSupportFragmentGlueHost;
@@ -38,7 +38,7 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        View.OnKeyListener test=null;
         final WebVideo video =
                 (WebVideo) getActivity().getIntent().getSerializableExtra(DetailsActivity.VIDEO);
         if (!video.getMp4().isEmpty()) {
@@ -51,11 +51,15 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
             mTransportControlGlue = new PlaybackTransportControlGlue<>(getContext(), playerAdapter);
             mTransportControlGlue.setHost(glueHost);
             mTransportControlGlue.setTitle(video.getTitle());
+            mTransportControlGlue.setSeekEnabled(true);
             //mTransportControlGlue.setSubtitle(video.getDescription());
             mTransportControlGlue.playWhenPrepared();
             playerAdapter.setDataSource(Uri.parse(video.getMp4()));
+            glueHost.setOnKeyInterceptListener(test);
+
         }
     }
+
 
     @Override
     public void onPause() {
@@ -64,5 +68,6 @@ public class PlaybackVideoFragment extends VideoSupportFragment {
             mTransportControlGlue.pause();
         }
     }
+
 }
 

@@ -15,13 +15,14 @@
 package anticlimacticteleservices.bitchutetv;
 
 import android.graphics.drawable.Drawable;
-
-import androidx.leanback.widget.ImageCardView;
-import androidx.leanback.widget.Presenter;
-import androidx.core.content.ContextCompat;
-
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.core.content.ContextCompat;
+import androidx.leanback.widget.ImageCardView;
+import androidx.leanback.widget.Presenter;
 
 import com.bumptech.glide.Glide;
 
@@ -67,8 +68,30 @@ public class CardPresenter extends Presenter {
                         updateCardBackgroundColor(this, selected);
                                 super.setSelected(selected);
                     }
-                };
 
+                };
+        cardView.setOnFocusChangeListener((view, isFocused) -> {
+            if (isFocused) {
+                ((TextView) cardView.findViewById(R.id.title_text)).setMaxLines(5);
+                ((TextView) cardView.findViewById(R.id.title_text)).setSingleLine(false);
+            }
+            else {
+                ((TextView) cardView.findViewById(R.id.title_text)).setMaxLines(1);
+                ((TextView) cardView.findViewById(R.id.title_text)).setSingleLine(true);
+                ((TextView) cardView.findViewById(R.id.title_text)).setMarqueeRepeatLimit(5000);
+                ((TextView) cardView.findViewById(R.id.title_text)).setEllipsize(TextUtils.TruncateAt.MARQUEE);
+                ((TextView) cardView.findViewById(R.id.title_text)).setFocusable(true);
+                ((TextView) cardView.findViewById(R.id.title_text)).setFocusableInTouchMode(true);
+                ((TextView) cardView.findViewById(R.id.title_text)).setSelected(true);
+            }
+        });
+
+        ((TextView) cardView.findViewById(R.id.title_text)).setMarqueeRepeatLimit(5000);
+        ((TextView) cardView.findViewById(R.id.title_text)).setEllipsize(TextUtils.TruncateAt.MARQUEE);
+        ((TextView) cardView.findViewById(R.id.title_text)).setFocusable(true);
+        ((TextView) cardView.findViewById(R.id.title_text)).setFocusableInTouchMode(true);
+        ((TextView) cardView.findViewById(R.id.title_text)).setSelected(true);
+        ((TextView) cardView.findViewById(R.id.title_text)).setSingleLine(true);
         cardView.setFocusable(true);
         cardView.setFocusableInTouchMode(true);
         updateCardBackgroundColor(cardView, false);
