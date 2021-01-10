@@ -21,7 +21,20 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.ContextCompat;
 import androidx.leanback.app.BackgroundManager;
 import androidx.leanback.app.BrowseSupportFragment;
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -34,22 +47,8 @@ import androidx.leanback.widget.OnItemViewSelectedListener;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
@@ -98,6 +97,9 @@ public class MainFragment extends BrowseSupportFragment {
     private ArrayList <String> followingCategories;
     private boolean debug;
     Dialog dialogHandle;
+    private String selectedVideo="";
+    private String selectedRow="";
+    private int selectedRowNumber;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -221,6 +223,8 @@ public class MainFragment extends BrowseSupportFragment {
         }
     }
     private void loadRows() {
+        int selected=-1;
+        Log.e("WTF","here i am "+selectedVideo+" "+selectedRow);
         ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
         CardPresenter cardPresenter = new CardPresenter();
         ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
@@ -231,6 +235,12 @@ public class MainFragment extends BrowseSupportFragment {
         if (subscriptions.size()>0) {
             for (Object v : subscriptions) {
                 listRowAdapter.add(v);
+                if (selectedVideo.equals(((WebVideo)v).getBitchuteID())){
+                    Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in subscribed");
+                    if (((WebVideo) v).getDate()>69){
+                        selected = (listRowAdapter.size() - 1);
+                    }
+                }
             }
             HeaderItem header = new HeaderItem(headerID, "Subscribed videos");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -242,6 +252,12 @@ public class MainFragment extends BrowseSupportFragment {
         if (popular.size()>0) {
             for (Object v : popular) {
                 listRowAdapter.add(v);
+                if (selectedVideo.equals(((WebVideo)v).getBitchuteID())){
+                    Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in popular");
+                    if (selected<0 && selectedRow.equals("Popular Videos")){
+                        selected = (listRowAdapter.size() - 1);
+                    }
+                }
             }
             HeaderItem header = new HeaderItem(headerID, "Popular Videos");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -253,6 +269,12 @@ public class MainFragment extends BrowseSupportFragment {
         if (trending.size()>0) {
             for (Object v : trending) {
                 listRowAdapter.add(v);
+                if (selectedVideo.equals(((WebVideo)v).getBitchuteID())){
+                    Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in trending");
+                    if (selected<0 && selectedRow.equals("Trending Videos")){
+                        selected = (listRowAdapter.size() - 1);
+                    }
+                }
             }
             HeaderItem header = new HeaderItem(headerID, "Trending Videos");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -264,6 +286,12 @@ public class MainFragment extends BrowseSupportFragment {
         if (history.size()>0) {
             for (Object v : history) {
                 listRowAdapter.add(v);
+                if (selectedVideo.equals(((WebVideo)v).getBitchuteID())){
+                    Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in history");
+                    if (selected<0 && selectedRow.equals("Video History")){
+                        selected = (listRowAdapter.size() - 1);
+                    }
+                }
             }
             HeaderItem header = new HeaderItem(headerID, "Video History");
             rowsAdapter.add(new ListRow(header, listRowAdapter));
@@ -297,6 +325,12 @@ public class MainFragment extends BrowseSupportFragment {
                 for (WebVideo v:allVideos){
                     if (v.getCategory().equals(c.getName())){
                         listRowAdapter.add(v);
+                        if (selectedVideo.equals(((WebVideo)v).getBitchuteID())){
+                            Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in row "+c.getName());
+                            if (selected<0 && selectedRow.equals(c.getName())){
+                                selected = (listRowAdapter.size() - 1);
+                            }
+                        }
                     }
                 }
                 HeaderItem header = new HeaderItem(headerID,c.getName() );
@@ -314,6 +348,12 @@ public class MainFragment extends BrowseSupportFragment {
                     WebVideo vid =(WebVideo)v;
                     if ((vid.getHashtags()).contains(tag)){
                         listRowAdapter.add(v);
+                        if (selectedVideo.equals(vid.getBitchuteID())){
+                            Log.e("WTF","matched video "+selectedVideo+" row:"+selectedRow+" # "+selectedRowNumber+" in row "+tag);
+                            if (selected<0 && selectedRow.equals(tag)){
+                                selected = (listRowAdapter.size() - 1);
+                            }
+                        }
                     }
                 }
 
@@ -382,7 +422,14 @@ public class MainFragment extends BrowseSupportFragment {
 
             rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
             headerID++;
+
             setAdapter(rowsAdapter);
+            if (selected>0) {
+                this.setSelectedPosition(selectedRowNumber, true, new ListRowPresenter.SelectItemViewHolderTask(selected));
+            }
+            selected = -1;
+
+
             //rowsSetup = true;
             MainActivity.data.setUpToDate(true);
         }
@@ -452,9 +499,11 @@ public class MainFragment extends BrowseSupportFragment {
     private final class ItemViewClickedListener implements OnItemViewClickedListener {
         @Override
         public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
+
             if (item instanceof WebVideo) {
                 WebVideo webVideo = (WebVideo) item;
-                Log.d(TAG, "Item: " + webVideo.toDebugString());
+
+                //Log.d(TAG, "Item: " + webVideo.toDebugString());
                 Intent intent = new Intent(getActivity(), DetailsActivity.class);
                 intent.putExtra(DetailsActivity.VIDEO, webVideo);
                 Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -567,6 +616,15 @@ public class MainFragment extends BrowseSupportFragment {
                 RowPresenter.ViewHolder rowViewHolder,
                 Row row) {
             if (item instanceof WebVideo) {
+                selectedRow= row.getHeaderItem().getName();
+                selectedVideo=((WebVideo) item).getBitchuteID();
+                selectedRowNumber= (int) row.getId();
+                Log.e("WTF",rowViewHolder.getRow().getId()+"=="+row.getHeaderItem().getName()+"--"+row.getId());
+                Log.e("WTF",((WebVideo) item).getBitchuteID());
+                if (!(rowViewHolder.getSelectedItem() == (null))){
+                    Log.e("WTF",(rowViewHolder.getSelectedItem()).toString());}
+                Log.e("WTF", String.valueOf(getRowsSupportFragment().getSelectedPosition()));
+                Log.e("WTF", String.valueOf((itemViewHolder.view.getId())));
                 mBackgroundUri = ((WebVideo) item).getThumbnailurl();
                 startBackgroundTimer();
             }
@@ -639,6 +697,178 @@ public class MainFragment extends BrowseSupportFragment {
                 dialogHandle.dismiss();
                 Toast.makeText(MainActivity.data.context, "adding " + subs.size() + " possible channels from bitchute.", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+    private void updateRows() {
+
+        ArrayObjectAdapter rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+        CardPresenter cardPresenter = new CardPresenter();
+        ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        int headerID=0;
+        if (allVideos == null  || allVideos.size()<1){
+            return;
+        }
+        if (subscriptions.size()>0) {
+            for (Object v : subscriptions) {
+                listRowAdapter.add(v);
+            }
+           // rowsAdapter.
+            HeaderItem header = new HeaderItem(headerID, "Subscribed videos");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            //rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (popular.size()>0) {
+            for (Object v : popular) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "Popular Videos");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            //rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (trending.size()>0) {
+            for (Object v : trending) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "Trending Videos");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (history.size()>0) {
+            for (Object v : history) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "Video History");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            // rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (subs.size()>0) {
+            for (int j = 0; j < subs.size(); j++) {
+                listRowAdapter.add(subs.get(j));
+            }
+            HeaderItem header = new HeaderItem(headerID, "Subscribed Channels");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        if (suggested.size()>0) {
+            for (int j = 0; j < suggested.size(); j++) {
+                listRowAdapter.add(suggested.get(j));
+            }
+            HeaderItem header = new HeaderItem(headerID, "Suggested Channels");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+        }
+        for ( Category c : Bitchute.getCategories()){
+            if (c.isFollowing()){
+                for (WebVideo v:allVideos){
+                    if (v.getCategory().equals(c.getName())){
+                        listRowAdapter.add(v);
+                    }
+                }
+                HeaderItem header = new HeaderItem(headerID,c.getName() );
+                rowsAdapter.add(new ListRow(header, listRowAdapter));
+                headerID++;
+            }
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        }
+        if (followingHashtags.size()>0) {
+            Log.d("MF-Loadrow","checking hashtags");
+            for (Object g : followingHashtags) {
+                String tag=(String)g;
+                for (Object v:allVideos){
+                    WebVideo vid =(WebVideo)v;
+                    if ((vid.getHashtags()).contains(tag)){
+                        listRowAdapter.add(v);
+                    }
+                }
+
+                HeaderItem header = new HeaderItem(headerID,tag );
+                rowsAdapter.add(new ListRow(header, listRowAdapter));
+                listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+                headerID++;
+            }
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        }
+        //TODO fix this ugly
+        //trendingHashtags= MainActivity.data.loadTrendingHashtags();
+        if ((trendingHashtags != null) && (trendingHashtags.size()>0)) {
+            HeaderItem gridHeader = new HeaderItem(headerID, "Trending Hashtags");
+            GridItemPresenter mGridPresenter = new GridItemPresenter();
+            ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+            // gridRowAdapter.add(getResources().getString(R.string.grid_view));
+            //  gridRowAdapter.add(getString(R.string.error_fragment));
+            boolean found = false;
+            for (String g : trendingHashtags) {
+                gridRowAdapter.add(g);
+                found=true;
+            }
+            if (found) {
+                rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+                headerID++;
+            }
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+        }
+        HeaderItem gridHeader = new HeaderItem(headerID, "Categories");
+        GridItemPresenter mGridPresenter = new GridItemPresenter();
+        ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+        for (Category c :Bitchute.getCategories()){
+            gridRowAdapter.add(c.getName());
+        }
+        rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+        headerID++;
+        if (allVideos.size()>0) {
+            for (Object v : allVideos) {
+                listRowAdapter.add(v);
+            }
+            HeaderItem header = new HeaderItem(headerID, "All");
+            rowsAdapter.add(new ListRow(header, listRowAdapter));
+            //  rowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            cardPresenter = new CardPresenter();
+            listRowAdapter = new ArrayObjectAdapter(cardPresenter);
+            headerID++;
+            setAdapter(rowsAdapter);
+            gridHeader = new HeaderItem(headerID, "PREFERENCES");
+            mGridPresenter = new GridItemPresenter();
+            gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
+            // gridRowAdapter.add(getResources().getString(R.string.grid_view));
+            //  gridRowAdapter.add(getString(R.string.error_fragment));
+            // gridRowAdapter.add("Refresh");
+            //gridRowAdapter.add("Authenticate");
+
+            if (debug) {
+                gridRowAdapter.add("Videos");
+                gridRowAdapter.add("Channels");
+                gridRowAdapter.add(("Nuke"));
+                gridRowAdapter.add(("Hashtags"));
+            }
+            gridRowAdapter.add(("Import"));
+
+            rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
+            headerID++;
+            setAdapter(rowsAdapter);
+            //rowsSetup = true;
+            MainActivity.data.setUpToDate(true);
+        }
+        else {
+
         }
     }
 }
