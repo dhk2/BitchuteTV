@@ -172,7 +172,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         return this.url;
 
     }
-    public long getDate()
+    public long getRealDate()
     {
         return date;
     }
@@ -308,6 +308,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
 
     public String toDebugString()  {
         return ("title:" + title + "\n" +
+                "ID:"+ID+"\n" +
                 "url:" + url + "\n" +
                 "thumbnail:" + thumbnailurl + "\n" +
                 "author:" + author + "\n" +
@@ -368,8 +369,11 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     @Override
     public int compareTo(WebVideo candidate)
     {
-        return (this.date>(candidate.getDate())  ? -1 :
-                this.date==(candidate.getDate()) ? 0 : 1);
+        long base=this.getDate();
+        long test=candidate.getDate();
+
+        return (base>(test)  ? -1 :
+                base==(test) ? 0 : 1);
     }
 
     public boolean isBitchute(){        return (this.bitchuteID.length() > 0);    }
@@ -570,7 +574,7 @@ class WebVideo implements Serializable,Comparable<WebVideo>
     }
     public boolean smartUpdate(WebVideo newer){
         boolean updated = false;
-        this.hackDateString = newer.getHackDateString();
+        //this.hackDateString = newer.getHackDateString();
         if (newer.getAuthor().length()>this.author.length()){
             this.author=newer.getAuthor();
             updated=true;
@@ -590,11 +594,22 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         if (newer.getDate()>0){
             if (this.date<1){
                 this.date=newer.getDate();
+                if (!hackDateString.startsWith("F") && (newer.getHashtags().startsWith("F"))){
+                    hackDateString=newer.hackDateString;
+                }
+                else{
+                    hackDateString="";
+                }
                 updated = true;
             }
+
             if (newer.getDate() != date){
                 Log.d("WebVideo-smartupdate","mismatched dates "+this.date+"!="+newer.getDate());
             }
+        }
+        if (!hackDateString.startsWith("F") && (newer.getHashtags().startsWith("F"))){
+            hackDateString=newer.hackDateString;
+            updated = true;
         }
         if (!newer.getAuthorSourceID().isEmpty()){
             if (this.authorSourceID.isEmpty()){
@@ -686,5 +701,73 @@ class WebVideo implements Serializable,Comparable<WebVideo>
         }
         Log.d("wtf",this.toDebugString());
         return updated;
+    }
+    public Long getDate(){
+        int years=0;
+        int months=0;
+        int weeks=0;
+        int days=0;
+        int hours=0;
+        int minutes = 0;
+        Long test=this.date;
+        if (test==0) {
+            test = new Date().getTime();
+            if (!this.hackDateString.isEmpty()) {
+                String hack = this.hackDateString + "     ";
+                if (hack.startsWith("a")) {
+                    hack = "1 " + hack.indexOf(" " + 1);
+                }
+                if (hack.contains("year")) {
+                    years = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    long javaisbroken=(years * 365l * 24l * 60l * 60l * 1000l);
+                    test = test - javaisbroken;
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+                if (hack.contains("month")) {
+                    months = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    test = test - (months * 30l * 24l * 60l * 60l * 1000l);
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+                if (hack.contains("week")) {
+                    weeks = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    test = test - (weeks * 7l * 24l * 60l * 60l * 1000l);
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+                if (hack.contains("day")) {
+                    days = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    test = test - (days * 24l * 60l * 60l * 1000l);
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+                if (hack.contains("hour")) {
+                    days = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    test = test - (hours * 60l * 60l * 1000l);
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+                if (hack.contains("minute")) {
+                    minutes = Integer.parseInt(hack.substring(0, hack.indexOf(" ")));
+                    test = test - (minutes * 60l * 1000l);
+                    hack = hack.substring(hack.indexOf(",") + 2);
+                    if (hack.startsWith("a")) {
+                        hack = "1 " + hack.indexOf(" " + 1);
+                    }
+                }
+            }
+        }
+        return test;
     }
 }

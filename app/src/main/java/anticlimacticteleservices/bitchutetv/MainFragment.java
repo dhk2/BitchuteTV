@@ -62,6 +62,7 @@ import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -115,6 +116,7 @@ public class MainFragment extends BrowseSupportFragment {
         vvm =   ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(VideoViewModel.class);
         cvm = ViewModelProvider.AndroidViewModelFactory.getInstance(MainActivity.data.getApplication()).create(ChannelViewModel.class);
         allVideos=(ArrayList)vvm.getDeadVideos();
+        Collections.sort(allVideos);
         new Bitchute.BitchuteHomePage().execute("https://www.bitchute.com/#listing-popular");
         vvm.getAllVideos().observe(this, new Observer<List<WebVideo>>(){
             @Override
@@ -127,6 +129,7 @@ public class MainFragment extends BrowseSupportFragment {
                 subscriptions = new ArrayList<WebVideo>();
                 history= new ArrayList<WebVideo>();
                 favorites = new ArrayList<WebVideo>();
+                Collections.sort(webVideos);
                 for (WebVideo v: webVideos){
                     if (v.getCategory().equals("popular")) {popular.add(v);}
                     if (v.getCategory().equals("trending")) {trending.add(v);}
@@ -134,13 +137,14 @@ public class MainFragment extends BrowseSupportFragment {
                     for (Channel c:allChannels){
                         if (c.isSubscribed() && v.getAuthorSourceID().equals(c.getSourceID())){
                                 subscriptions.add(v);
-                                Log.v(TAG+"live","Adding "+v.getID()+"("+v.getSourceID()+"):"+v.getTitle()+" to subscribed for "+c.toDebugString());
+    //                            Log.v(TAG+"live","Adding "+v.getID()+"("+v.getSourceID()+"):"+v.getTitle()+" to subscribed for "+c.toDebugString());
                         }
                     }
                 }
-                Collections.sort(popular);
+         /*       Collections.sort(popular);
                 Collections.sort(trending);
                 Collections.sort(subscriptions);
+           */
                 if (!rowsSetup){
                     if (allVideos.size()>0) {
                         loadRows();
@@ -186,9 +190,9 @@ public class MainFragment extends BrowseSupportFragment {
                 }
             }
         }
-        Collections.sort(popular);
-        Collections.sort(trending);
-        Collections.sort(subscriptions);
+       // Collections.sort(popular);
+      //  Collections.sort(trending);
+      //  Collections.sort(subscriptions);
         trendingHashtags = (ArrayList)MainActivity.data.trendingHashtags;
         followingHashtags = (ArrayList)MainActivity .data.followingHashtags;
         followingCategories = (ArrayList)MainActivity.data.followingCategories;
@@ -322,6 +326,11 @@ public class MainFragment extends BrowseSupportFragment {
         }
         for ( Category c : Bitchute.getCategories()){
             if (c.isFollowing()){
+                if (selectedRow.equals(c.getName())){
+                    selectedRowNumber=headerID;
+                    selected=0;
+                    Log.e("WTF","category found "+selectedRow+" >"+selectedRowNumber);
+                }
                 for (WebVideo v:allVideos){
                     if (v.getCategory().equals(c.getName())){
                         listRowAdapter.add(v);
@@ -335,6 +344,7 @@ public class MainFragment extends BrowseSupportFragment {
                 }
                 HeaderItem header = new HeaderItem(headerID,c.getName() );
                 rowsAdapter.add(new ListRow(header, listRowAdapter));
+
                 headerID++;
             }
             cardPresenter = new CardPresenter();
@@ -419,12 +429,12 @@ public class MainFragment extends BrowseSupportFragment {
                 gridRowAdapter.add(("Hashtags"));
             }
             gridRowAdapter.add(("Import"));
-
+            gridRowAdapter.add(("remove dupes"));
             rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
             headerID++;
 
             setAdapter(rowsAdapter);
-            if (selected>0) {
+            if (selected>=0) {
                 this.setSelectedPosition(selectedRowNumber, true, new ListRowPresenter.SelectItemViewHolderTask(selected));
             }
             selected = -1;
@@ -559,6 +569,16 @@ public class MainFragment extends BrowseSupportFragment {
                         }
                     }
                 }
+                if (g.equals("remove dupes")){
+                    for (WebVideo vid : allVideos){
+                        for (WebVideo vid2:allVideos){
+                            if ((vid.getBitchuteID().equals(vid2.getBitchuteID())) && (vid2.getID() != vid.getID())){
+                                Log.e("WTF","duplicate video"+vid.toCompactString()+vid2.toCompactString());
+                                vvm.delete(vid2);
+                            }
+                        }
+                    }
+                }
                 Log.d("debug",empty+" videos with no hashtags");
                 if (g.equals("Nuke")) {
                     for (WebVideo vid : allVideos){
@@ -573,6 +593,9 @@ public class MainFragment extends BrowseSupportFragment {
                     followingHashtags =(ArrayList) MainActivity.data.followingHashtags;
                     new Bitchute.GetWebVideos().execute("/hashtag/"+g.substring(1));
                     rowsSetup=false;
+                    selectedRow=g;
+                    selectedVideo="";
+                    selectedRowNumber=0;
                 }
                 item = g;
 
@@ -587,6 +610,9 @@ public class MainFragment extends BrowseSupportFragment {
                         c.setFollowing(true);
                         new Bitchute.GetWebVideos().execute(c.getUrl());
                         rowsSetup=false;
+                        selectedRow=g;
+                        selectedRowNumber=0;
+                        selectedVideo="";
                     }
                 }
             }
@@ -619,12 +645,11 @@ public class MainFragment extends BrowseSupportFragment {
                 selectedRow= row.getHeaderItem().getName();
                 selectedVideo=((WebVideo) item).getBitchuteID();
                 selectedRowNumber= (int) row.getId();
-                Log.e("WTF",rowViewHolder.getRow().getId()+"=="+row.getHeaderItem().getName()+"--"+row.getId());
-                Log.e("WTF",((WebVideo) item).getBitchuteID());
+                Log.e("WTF",((WebVideo) item).getDate() +"]["+((WebVideo) item).getHackDateString()+"]["+ new Date(((WebVideo) item).getDate()));
                 if (!(rowViewHolder.getSelectedItem() == (null))){
-                    Log.e("WTF",(rowViewHolder.getSelectedItem()).toString());}
-                Log.e("WTF", String.valueOf(getRowsSupportFragment().getSelectedPosition()));
-                Log.e("WTF", String.valueOf((itemViewHolder.view.getId())));
+                //    Log.e("WTF",(rowViewHolder.getSelectedItem()).toString());
+                }
+                Log.e("WTF",((WebVideo)item).toDebugString());
                 mBackgroundUri = ((WebVideo) item).getThumbnailurl();
                 startBackgroundTimer();
             }
@@ -860,7 +885,7 @@ public class MainFragment extends BrowseSupportFragment {
                 gridRowAdapter.add(("Hashtags"));
             }
             gridRowAdapter.add(("Import"));
-
+            gridRowAdapter.add(("remove dupes"));
             rowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
             headerID++;
             setAdapter(rowsAdapter);

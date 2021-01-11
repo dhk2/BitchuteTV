@@ -50,8 +50,15 @@ public class VideoRepository {
         @Override
         protected Void doInBackground(WebVideo... webVideos){
             WebVideo v =  webVideos[0];
-            videoDao.insert(v);
-            v = (videoDao.getVideosBySourceID(webVideos[0].getSourceID())).get(0);
+            List<WebVideo> x = videoDao.getVideosBySourceID(v.getSourceID());
+            if (x.size()<1) {
+                videoDao.insert(v);
+            }
+            else {
+                WebVideo z=x.get(0);
+                z.smartUpdate(v);
+                videoDao.update(z);
+            }
             return null;
         }
     }
