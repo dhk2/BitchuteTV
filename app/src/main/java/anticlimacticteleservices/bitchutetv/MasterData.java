@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 
-import androidx.room.SharedSQLiteStatement;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +19,7 @@ public class MasterData {
     List followingCategories;
     Boolean upToDate;
     String TAG="masterdata";
+    WebVideo activeVideo;
     public MasterData (Application application, Context context){
         allWebVideos = new ArrayList<WebVideo>();
         allChannels = new ArrayList<Channel>();
@@ -81,5 +79,13 @@ public class MasterData {
         th.add("#vaccine");
         th.add("#music");
         return th;
+    }
+
+    public WebVideo getActiveVideo() {
+        return activeVideo;
+    }
+
+    public void setActiveVideo(WebVideo activeVideo) {
+        this.activeVideo = activeVideo;
     }
 }

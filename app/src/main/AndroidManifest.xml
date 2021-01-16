@@ -43,6 +43,16 @@
         <activity android:name=".PlaybackActivity" />
         <activity android:name=".BrowseErrorActivity" />
         <activity android:name=".ChannelDetailsActivity" />
+        <activity
+            android:name=".PlayerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:label="player"
+            android:theme="@style/PlayerTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

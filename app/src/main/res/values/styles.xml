@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppCompatTheme" parent="@style/Theme.Leanback" />
+    <style name="AppCompatTheme" parent="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
     <style name="TrackSelectionDialogThemeOverlay" parent="ThemeOverlay.AppCompat.Dialog.Alert">
         <item name="windowNoTitle">false</item>
     </style>
 
-    <style name="PlayerTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
-    </style>
 
-
-
-</resources>
+        <style name="PlayerTheme" parent="Theme.AppCompat.DayNight">
+            <item name="colorPrimary">@color/colorPrimary</item>
+            <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+            <item name="colorAccent">@color/colorAccent</item>
+            <item name="android:windowBackground">@null</item>
+        </style>
+    </resources>

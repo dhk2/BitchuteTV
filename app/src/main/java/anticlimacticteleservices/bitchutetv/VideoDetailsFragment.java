@@ -18,9 +18,17 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
 
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.ContextCompat;
 import androidx.leanback.app.DetailsSupportFragment;
 import androidx.leanback.app.DetailsSupportFragmentBackgroundController;
 import androidx.leanback.widget.Action;
@@ -38,26 +46,14 @@ import androidx.leanback.widget.OnItemViewClickedListener;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-
-import android.os.Handler;
-import android.util.Log;
-import android.view.KeyEvent;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
-import java.lang.reflect.Array;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -346,9 +342,10 @@ public class VideoDetailsFragment extends DetailsSupportFragment {
                     if (!mSelectedWebVideo.getMp4().isEmpty()) {
                         mSelectedWebVideo.setWatched(true);
                         Bitchute.setWatched(mSelectedWebVideo);
-                        Intent intent = new Intent(getActivity(), PlaybackActivity.class);
+                        Intent intent = new Intent(getActivity(), PlayerActivity.class);
                         intent.putExtra(DetailsActivity.VIDEO, mSelectedWebVideo);
-                        startActivity(intent);
+                        MainActivity.data.setActiveVideo(mSelectedWebVideo);
+                    startActivity(intent);
                     }
                     else {
                         Toast.makeText(getActivity(), "missing information to access file remotely, please back out and try again", Toast.LENGTH_SHORT).show();

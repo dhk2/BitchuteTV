@@ -31,9 +31,9 @@ dependencies {
     implementation 'org.jsoup:jsoup:1.12.1'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'androidx.room:room-runtime:2.0.0'
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.10.5'
-    implementation 'com.google.android.exoplayer:exoplayer-dash:2.10.5'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.10.5'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.12.3'
+    implementation 'com.google.android.exoplayer:exoplayer-dash:2.12.3'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.12.3'
     annotationProcessor 'androidx.room:room-compiler:2.0.0'
     // Room components
     implementation "androidx.room:room-runtime:2.0.0"
